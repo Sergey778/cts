@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Login Form</title>
+
+
+    <link rel="stylesheet" href="/resources/css/signinpage.css">
+    <script src="/resources/libs/jquery-3.1.1.min.js" type="application/javascript"></script>
+    <script src="/resources/js/signinpage.js" type="application/javascript"></script>
+
+</head>
+
+<body>
+
+<div class="login">
+    <div class="login-screen">
+        <div class="app-title">
+            <h1>Login</h1>
+        </div>
+
+        <form id="login-form">
+            <div class="control-group">
+                <input type="text" class="login-field" value="" placeholder="username" id="login-name" name="login-name">
+                <label class="login-field-icon fui-user" for="login-name"></label>
+            </div>
+
+            <div class="control-group">
+                <input type="password" class="login-field" value="" placeholder="password" id="login-pass" name="login-pass">
+                <label class="login-field-icon fui-lock" for="login-pass"></label>
+            </div>
+            <input type="submit" class="btn btn-primary btl-large btn-block" value="Log In" type="submit">
+        </form>
+        <div id="status-message">
+
+        </div>
+
+        <div class="login-form-t">
+            <div>
+                <a class="login-link" href="#">Lost your password?</a>
+            </div>
+            <div>
+                <a class="login-link" href="/register">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>
