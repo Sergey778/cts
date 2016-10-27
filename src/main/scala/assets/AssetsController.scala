@@ -1,4 +1,4 @@
-package Assets
+package assets
 
 import com.twitter.finagle.http.Request
 import com.twitter.finatra.http.Controller

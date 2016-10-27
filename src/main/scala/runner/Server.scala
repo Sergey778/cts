@@ -1,4 +1,4 @@
-package Runner
+package runner
 
 import com.twitter.finagle.http.{Request, Response}
 import com.twitter.finatra.http.HttpServer
@@ -12,7 +12,7 @@ class Server extends HttpServer {
       .filter[LoggingMDCFilter[Request, Response]]
       .filter[TraceIdMDCFilter[Request, Response]]
       .filter[CommonFilters]
-      .add[Assets.AssetsController]
+      .add[assets.AssetsController]
   }
 
 }

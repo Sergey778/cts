@@ -1,9 +1,9 @@
-package Assets
+package assets
 
-import Runner.Server
 import com.twitter.finagle.http.Status
 import com.twitter.finatra.http._
 import com.twitter.inject.server.FeatureTest
+import runner.Server
 
 import scala.io.Source
 
