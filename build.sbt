@@ -30,6 +30,13 @@ resolvers ++= Seq(
 libraryDependencies ++= Seq(
   "com.twitter" %% "finatra-http" % versions.finatra,
   "com.twitter" %% "finatra-httpclient" % versions.finatra,
+
+  "commons-dbcp" % "commons-dbcp" % "1.4",
+  "commons-pool" % "commons-pool" % "1.6",
+  "org.scalikejdbc" %% "scalikejdbc" % "2.4.2",
+  "org.scalikejdbc" %% "scalikejdbc-config"  % "2.4.2",
+  "org.scalikejdbc" %% "scalikejdbc-test"   % "2.4.2"   % "test",
+
   "ch.qos.logback" % "logback-classic" % versions.logback,
   "org.scalatest" %% "scalatest" % versions.scalatest % "test",
   "com.oracle" % "ojdbc6" % versions.oraclejdbc,
