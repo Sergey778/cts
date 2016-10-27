@@ -13,6 +13,7 @@ class Server extends HttpServer {
       .filter[TraceIdMDCFilter[Request, Response]]
       .filter[CommonFilters]
       .add[assets.AssetsController]
+      .add[auth.SignInController]
   }
 
 }

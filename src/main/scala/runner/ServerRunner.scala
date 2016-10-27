@@ -1,3 +1,7 @@
 package runner
 
-object ServerRunner extends Server
+import scalikejdbc.config.DBs
+
+object ServerRunner extends Server {
+  DBs.setupAll()
+}
