@@ -2,7 +2,7 @@ package auth
 
 import com.twitter.finagle.http.Request
 import com.twitter.finatra.http.Controller
-import db.Users
+import db.User
 
 class SignInController extends Controller {
   get("/signin") { request: Request =>
@@ -10,18 +10,13 @@ class SignInController extends Controller {
   }
 
   post("/signin") { request: Request =>
-    val credentials = (request.params.get("loginName"), request.params.get("loginPass"))
-    credentials match {
-      case (Some(user), Some(pass)) if Users.checkPassword(user, pass) => okWithToken(user)
-      case _ => response.unauthorized
-    }
+    User(request.params)
+      .filter(x => x.isCorrectPassword(request.params))
+      .flatMap(x => okWithToken(x))
+      .getOrElse(response.unauthorized)
   }
 
-  protected def okWithToken(username: String) = {
-    Users.createToken(username).map { token =>
+  protected def okWithToken(user: User) = user.createAccessToken map { token =>
       response.ok("It's ok").cookie("access_token", token)
-    } getOrElse {
-      response.unauthorized
-    }
   }
 }

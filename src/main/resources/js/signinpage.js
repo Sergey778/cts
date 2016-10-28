@@ -5,7 +5,7 @@ $(document).ready(function() {
         $.ajax({
             url: "/signin",
             type: "POST",
-            data: {loginName: name, loginPass: pass},
+            data: {"user_name": name, "user_password": pass},
             success: function (data) {
                 window.location.replace("/index")
             },
