@@ -36,6 +36,7 @@ libraryDependencies ++= Seq(
   "org.scalikejdbc" %% "scalikejdbc" % "2.4.2",
   "org.scalikejdbc" %% "scalikejdbc-config"  % "2.4.2",
   "org.scalikejdbc" %% "scalikejdbc-test"   % "2.4.2"   % "test",
+  "javax.mail" % "mail" % "1.5.0-b01",
 
   "ch.qos.logback" % "logback-classic" % versions.logback,
   "org.scalatest" %% "scalatest" % versions.scalatest % "test",
