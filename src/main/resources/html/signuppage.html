@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CTS - Sign Up</title>
+
+
+    <link rel="stylesheet" href="/resources/css/signuppage.css">
+    <script src="/resources/libs/jquery-3.1.1.min.js" type="application/javascript"></script>
+    <script src="/resources/js/signuppage.js" type="application/javascript"></script>
+
+</head>
+
+<body>
+
+<div class="login">
+    <div class="login-screen">
+        <div class="app-title">
+            <h1>Sign Up</h1>
+        </div>
+
+        <form id="login-form">
+            <div class="control-group">
+                <input type="text" class="login-field" value="" placeholder="Username" id="name" name="login-name">
+                <label class="login-field-icon fui-user" for="name"></label>
+            </div>
+
+            <div class="control-group">
+                <input type="email" class="login-field" value="" placeholder="Email" id="email">
+            </div>
+
+            <div class="control-group">
+                <input type="password" class="login-field" value="" placeholder="Password" id="pass" name="login-pass">
+                <label class="login-field-icon fui-lock" for="pass"></label>
+            </div>
+
+            <div class="control-group">
+                <input type="password" class="login-field" value="" placeholder="Confirm password" id="confirm-pass">
+             </div>
+            <input type="submit" class="btn btn-primary btl-large btn-block" value="Log In" type="submit">
+        </form>
+        <div id="status-message">
+
+        </div>
+
+        <div class="login-form-t">
+            <div>
+                <a class="login-link" href="/signin">Already have an account? Sign In</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>
