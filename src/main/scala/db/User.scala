@@ -58,7 +58,7 @@ object User {
     using(DB(ConnectionPool.borrow())) { db =>
       db localTx { implicit session =>
         sql""" INSERT INTO "user" (user_email, user_name, user_password, user_avalon_login)
-          VALUES(${email}, ${name}, ${password}, ${avalonLogin})
+          VALUES(${email}, ${name}, ${password.bcrypt}, ${avalonLogin})
         """.update().apply()
       }
     }
