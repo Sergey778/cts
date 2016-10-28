@@ -22,10 +22,6 @@ class SignInController extends Controller {
       .getOrElse(response.unauthorized)
   }
 
-  get("/signup") { request: Request =>
-    response.ok.file("/html/signuppage.html")
-  }
-
   protected def okWithToken(user: User) = user.createAccessToken map { token =>
       response.ok("It's ok").cookie("access_token", token)
   }

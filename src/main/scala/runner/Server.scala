@@ -14,6 +14,7 @@ class Server extends HttpServer {
       .filter[CommonFilters]
       .add[assets.AssetsController]
       .add[auth.SignInController]
+      .add[auth.SignUpController]
   }
 
 }
