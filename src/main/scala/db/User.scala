@@ -1,13 +1,11 @@
 package db
 
 import com.github.t3hnar.bcrypt._
-import com.twitter.finagle.http.ParamMap
 import scalikejdbc._
 
 case class User(id: BigInt, name: String, password: String, email: String, avalonLogin: Option[String]) {
   def isCorrectPassword(pass: String): Boolean = pass.isBcrypted(password)
   def isCorrectPassword(pass: Option[String]): Boolean = pass.exists(_.isBcrypted(password))
-  def isCorrectPassword(params: ParamMap): Boolean = isCorrectPassword(params.get("user_password"))
 
   def accessTokens = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
@@ -36,13 +34,6 @@ object User {
 
   def apply(name: String, password: String, email: String, avalonLogin: Option[String] = None) = {
     forName(name) getOrElse createUser(name, password, email, avalonLogin)
-  }
-
-  def apply(params: ParamMap) = {
-    val names = "user_id" :: "user_name" :: "user_email" :: Nil
-    names.map(x => x -> params.get(x)).find(p => p._2.nonEmpty).flatMap { case (column, value) =>
-      get(column, value)
-    }
   }
 
   def resultSetToUser(rs: WrappedResultSet): User = User(
