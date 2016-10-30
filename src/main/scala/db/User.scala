@@ -55,6 +55,16 @@ case class User(id: BigInt,
     }
     UserAuthRef(this, uuid, refType, now)
   }
+
+  def confirm = using(DB(ConnectionPool.borrow())) { db =>
+    db localTx { implicit session =>
+      val result = sql"""UPDATE "user" SET user_confirmed = TRUE WHERE user_id = ${id}"""
+        .update()
+        .apply()
+      if (result > 0) Some(User(id, name, password, email, signupTime, true))
+      else None
+    }
+  }
 }
 
 object User {

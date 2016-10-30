@@ -15,6 +15,7 @@ class Server extends HttpServer {
       .add[assets.AssetsController]
       .add[auth.SignInController]
       .add[auth.SignUpController]
+      .add[auth.SignUpConfirmController]
   }
 
 }

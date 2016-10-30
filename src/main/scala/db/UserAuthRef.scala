@@ -3,7 +3,7 @@ package db
 import java.sql.Timestamp
 
 import com.twitter.util.Future
-import scalikejdbc.WrappedResultSet
+import scalikejdbc.{ConnectionPool, DB, WrappedResultSet, _}
 import util.Email
 
 sealed trait AuthRefType {
@@ -47,6 +47,14 @@ case object PasswordReset extends AuthRefType
 case class UserAuthRef(user: User, reference: String, refType: AuthRefType, validUntil: Timestamp) {
   def sendEmail(refStart: String): Future[Unit] =
     Email.sendMessage(user.email, refType.subject, refType.body(s"$refStart?token=$reference"))
+
+  def remove = using(DB(ConnectionPool.borrow())) { db =>
+    db localTx { implicit session =>
+      sql"DELETE FROM user_auth_ref WHERE user_auth_ref = ${reference}"
+        .update()
+        .apply()
+    }
+  }
 }
 
 object UserAuthRef {
@@ -59,4 +67,14 @@ object UserAuthRef {
     AuthRefType(rs.string("user_auth_ref_type")),
     rs.timestamp("user_auth_ref_valid_until")
   )
+
+  def forReference(token: String) = using(DB(ConnectionPool.borrow())) { db =>
+    db readOnly { implicit session =>
+      sql"""SELECT user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until
+            FROM user_auth_ref"""
+        .map(x => resultSetToAuthRef(x))
+        .single()
+        .apply()
+    }
+  }
 }
