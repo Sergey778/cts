@@ -10,6 +10,7 @@ CREATE TABLE "user" (
   user_email        VARCHAR(254) UNIQUE   NOT NULL,
   user_password     VARCHAR(60)           NOT NULL,
   user_signup_time  TIMESTAMP             NOT NULL  DEFAULT now(),
+  user_confirmed    BOOLEAN               NOT NULL  DEFAULT FALSE,
 
   CONSTRAINT user_pk PRIMARY KEY (user_id)
 );

@@ -1,11 +1,17 @@
 package db
 
 import java.sql.Timestamp
+import java.time.LocalDateTime
 
 import com.github.t3hnar.bcrypt._
 import scalikejdbc._
 
-case class User(id: BigInt, name: String, password: String, email: String, signupTime: Timestamp) {
+case class User(id: BigInt,
+                name: String,
+                password: String,
+                email: String,
+                signupTime: Timestamp,
+                confirmed: Boolean = false) {
   def isCorrectPassword(pass: String): Boolean = pass.isBcrypted(password)
   def isCorrectPassword(pass: Option[String]): Boolean = pass.exists(_.isBcrypted(password))
 
@@ -27,6 +33,28 @@ case class User(id: BigInt, name: String, password: String, email: String, signu
       if (result > 0) Some(uuid) else None
     }
   }
+
+  def authReferences = using(DB(ConnectionPool.borrow())) { db =>
+    db readOnly { implicit session =>
+      sql"""SELECT user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until
+            FROM user_auth_ref WHERE user_id = ${id} AND user_auth_ref_valid_until < now()"""
+        .map(x => UserAuthRef.resultSetToAuthRef(x, this))
+        .list
+        .apply()
+    }
+  }
+
+  def createAuthReference(refType: AuthRefType) = using(DB(ConnectionPool.borrow())) { db =>
+    val uuid = java.util.UUID.randomUUID().toString
+    val now = Timestamp.valueOf(LocalDateTime.now().plusDays(1))
+    db localTx { implicit session =>
+      sql"""INSERT INTO user_auth_ref(user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until)
+               VALUES (${id}, ${uuid}, ${refType.toString}, ${now})"""
+        .update()
+        .apply()
+    }
+    UserAuthRef(this, uuid, refType, now)
+  }
 }
 
 object User {
@@ -43,13 +71,14 @@ object User {
     rs.string("user_name"),
     rs.string("user_password"),
     rs.string("user_email"),
-    rs.timestamp("user_signup_time")
+    rs.timestamp("user_signup_time"),
+    rs.boolean("user_confirmed")
   )
 
   def get[A](columnName: String, value: A) = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       val statement = """
-          SELECT user_id, user_name, user_password, user_email, user_signup_time
+          SELECT user_id, user_name, user_password, user_email, user_signup_time, user_confirmed
           FROM "user"
           WHERE """ + s"$columnName = ?"
       session.single(statement, value)(resultSetToUser)

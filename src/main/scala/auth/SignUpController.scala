@@ -3,8 +3,7 @@ package auth
 import com.twitter.finagle.http.Request
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.request.FormParam
-import db.User
-import util.Email
+import db.{EmailConfirmation, User}
 
 case class SignUpRequest(
                         @FormParam `user_name`: String,
@@ -23,7 +22,7 @@ class SignUpController extends Controller {
     else {
       User.createUser(request.`user_name`, request.`user_pass`, request.`user_email`) match {
         case Some(u) =>
-          Email.sendMessage(request.`user_email`, "Sign up in CTS", "Hey! You signed up!")
+          u.createAuthReference(EmailConfirmation).sendEmail("http://localhost:8888/signupconfirm/")
           response.ok
         case None => response.internalServerError
       }
