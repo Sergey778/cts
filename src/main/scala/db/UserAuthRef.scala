@@ -46,7 +46,7 @@ case object PasswordReset extends AuthRefType
 
 case class UserAuthRef(user: User, reference: String, refType: AuthRefType, validUntil: Timestamp) {
   def sendEmail(refStart: String): Future[Unit] =
-    Email.sendMessage(user.email, refType.subject, refType.body(refStart + reference))
+    Email.sendMessage(user.email, refType.subject, refType.body(s"$refStart?token=$reference"))
 }
 
 object UserAuthRef {
