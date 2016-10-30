@@ -16,7 +16,7 @@ $(document).ready(function() {
                 type: "POST",
                 data: {"user_name": name, "user_pass": pass, "user_email": email},
                 success: function (data) {
-                    window.location.replace("/signupconfirm")
+                    window.location.replace("/signupconfirminfo")
                 },
                 error: function (data) {
                     $("#status-message").html("<p class=\"status-message\">" + data.str + "</p>");
