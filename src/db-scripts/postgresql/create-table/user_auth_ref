@@ -1,0 +1,15 @@
+
+DROP TABLE IF EXISTS user_auth_ref;
+
+CREATE TABLE user_auth_ref (
+  user_id                     BIGINT    NOT NULL,
+  user_auth_ref               CHAR(36)  NOT NULL UNIQUE,
+  -- Type must be 'R' - for password reset or 'C' - for sign up confirmation
+  user_auth_ref_type          CHAR(1)   NOT NULL,
+  user_auth_ref_valid_until   TIMESTAMP NOT NULL DEFAULT now() + INTERVAL '1' DAY,
+  
+  CONSTRAINT user_auth_ref_pk PRIMARY KEY (user_auth_ref),
+  CONSTRAINT user_auth_ref_user_fk FOREIGN KEY (user_id)
+    REFERENCES "user" (user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT user_auth_ref_type_chk CHECK (user_auth_ref_type IN ('R', 'C'))
+);
