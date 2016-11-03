@@ -59,7 +59,7 @@ case class UserAuthRef(user: User, reference: String, refType: AuthRefType, vali
 
 object UserAuthRef {
   def resultSetToAuthRef(rs: WrappedResultSet): UserAuthRef =
-    resultSetToAuthRef(rs, User.forId(rs.bigInt("user_id")).get)
+    resultSetToAuthRef(rs, User.findById(rs.bigInt("user_id")).get)
 
   def resultSetToAuthRef(rs: WrappedResultSet, user: User): UserAuthRef = UserAuthRef(
     user,

@@ -16,7 +16,7 @@ class SignInController extends Controller {
   }
 
   post("/signin") { request: SignInFormRequest =>
-    User.forName(request.`user_name`)
+    User.findByName(request.`user_name`)
       .filter(_.isCorrectPassword(request.`user_password`))
       .flatMap(x => okWithToken(x))
       .getOrElse(response.unauthorized)

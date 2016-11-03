@@ -18,9 +18,9 @@ class SignUpController extends Controller {
   }
 
   post("/signup") { request: SignUpRequest =>
-    if (User.forName(request.`user_name`).nonEmpty) response.preconditionFailed("User already exists")
+    if (User.findByName(request.`user_name`).nonEmpty) response.preconditionFailed("User already exists")
     else {
-      User.createUser(request.`user_name`, request.`user_pass`, request.`user_email`) match {
+      User.create(request.`user_name`, request.`user_pass`, request.`user_email`) match {
         case Some(u) =>
           u.createAuthReference(EmailConfirmation).sendEmail("http://localhost:8888/signupconfirm")
           response.ok

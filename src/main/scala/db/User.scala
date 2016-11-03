@@ -12,6 +12,7 @@ case class User(id: BigInt,
                 email: String,
                 signupTime: Timestamp,
                 confirmed: Boolean = false) {
+
   def isCorrectPassword(pass: String): Boolean = pass.isBcrypted(password)
   def isCorrectPassword(pass: Option[String]): Boolean = pass.exists(_.isBcrypted(password))
 
@@ -37,7 +38,7 @@ case class User(id: BigInt,
   def authReferences = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""SELECT user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until
-            FROM user_auth_ref WHERE user_id = ${id} AND user_auth_ref_valid_until < now()"""
+            FROM user_auth_ref WHERE user_id = ${id} AND user_auth_ref_valid_until > now()"""
         .map(x => UserAuthRef.resultSetToAuthRef(x, this))
         .list
         .apply()
@@ -61,22 +62,31 @@ case class User(id: BigInt,
       val result = sql"""UPDATE "user" SET user_confirmed = TRUE WHERE user_id = ${id}"""
         .update()
         .apply()
-      if (result > 0) Some(User(id, name, password, email, signupTime, true))
+      if (result > 0) Some(User(id, name, password, email, signupTime, confirmed = true))
       else None
     }
+  }
+
+  def delete = using(DB(ConnectionPool.borrow())) { db =>
+    val result = db localTx { implicit session =>
+      sql"""DELETE FROM "user" WHERE user_id = ${id}"""
+        .update()
+        .apply()
+    }
+    result > 0
   }
 }
 
 object User {
-  def forId(id: BigInt) = get("user_id", id)
-  def forName(name: String) = get("user_name", name)
-  def forEmail(email: String) = get("user_email", email)
+  def findById(id: BigInt) = find("user_id", id)
+  def findByName(name: String) = find("user_name", name)
+  def findByEmail(email: String) = find("user_email", email)
 
   def apply(name: String, password: String, email: String) = {
-    forName(name) getOrElse createUser(name, password, email)
+    findByName(name) getOrElse create(name, password, email)
   }
 
-  def resultSetToUser(rs: WrappedResultSet): User = User(
+  def fromResultSet(rs: WrappedResultSet): User = User(
     rs.bigInt("user_id"),
     rs.string("user_name"),
     rs.string("user_password"),
@@ -85,24 +95,24 @@ object User {
     rs.boolean("user_confirmed")
   )
 
-  def get[A](columnName: String, value: A) = using(DB(ConnectionPool.borrow())) { db =>
+  protected def find[A](columnName: String, value: A) = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       val statement = """
           SELECT user_id, user_name, user_password, user_email, user_signup_time, user_confirmed
           FROM "user"
           WHERE """ + s"$columnName = ?"
-      session.single(statement, value)(resultSetToUser)
+      session.single(statement, value)(fromResultSet)
     }
   }
 
-  def createUser(name: String, password: String, email: String) = {
-    using(DB(ConnectionPool.borrow())) { db =>
+  def create(name: String, password: String, email: String) = {
+    val result = using(DB(ConnectionPool.borrow())) { db =>
       db localTx { implicit session =>
         sql""" INSERT INTO "user" (user_email, user_name, user_password)
           VALUES(${email}, ${name}, ${password.bcrypt})
         """.update().apply()
       }
     }
-    forName(name)
+    if (result > 0) findByName(name) else None
   }
 }
