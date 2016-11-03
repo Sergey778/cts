@@ -1,0 +1,3 @@
+
+DROP TABLE test;
+DROP SEQUENCE test_seq;
