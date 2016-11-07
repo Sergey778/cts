@@ -16,6 +16,7 @@ class Server extends HttpServer {
       .add[auth.SignInController]
       .add[auth.SignUpController]
       .add[auth.SignUpConfirmController]
+      .add[profile.ProfileController]
   }
 
 }
