@@ -1,8 +1,9 @@
 package auth
 
-import com.twitter.finagle.http.Request
+import com.twitter.finagle.http.{Cookie, Request, Response, Status}
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.request.FormParam
+import com.twitter.util.Duration
 import db.User
 
 case class SignInFormRequest (
@@ -11,18 +12,27 @@ case class SignInFormRequest (
                       )
 
 class SignInController extends Controller {
-  get("/signin") { request: Request =>
+  filter[GuestFilter].get("/signin") { request: Request =>
     response.ok.file("/html/signinpage.html")
   }
 
-  post("/signin") { request: SignInFormRequest =>
+  filter[GuestFilter].post("/signin") { request: SignInFormRequest =>
     User.findByName(request.`user_name`)
       .filter(_.isCorrectPassword(request.`user_password`))
       .flatMap(x => okWithToken(x))
       .getOrElse(response.unauthorized)
   }
 
+  filter[UserFilter].get("/signout") { request: Request =>
+    val response = Response(Status.TemporaryRedirect)
+    response.location = "/signin"
+    response.removeCookie("access_token")
+    response
+  }
+
   protected def okWithToken(user: User) = user.createAccessToken map { token =>
-      response.ok("It's ok").cookie("access_token", token)
+    val cookie = new Cookie("access_token", token.token)
+    cookie.maxAge = Duration.fromNanoseconds(token.validUntil.getNanos)
+    response.ok("It's ok").cookie(cookie)
   }
 }

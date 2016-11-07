@@ -59,13 +59,15 @@ object UserAuthToken {
   def fromResultSet(rs: WrappedResultSet): UserAuthToken =
     fromResultSet(rs, User.fromResultSet(rs))
 
-  def create(user: User) = using(DB(ConnectionPool.borrow())) { db =>
-    db localTx { implicit session =>
-      val token = java.util.UUID.randomUUID().toString
-      val result = sql"INSERT INTO user_token(user_id, user_token_value) VALUES (${user.id}, ${token})"
-        .update()
-        .apply()
-      if (result > 0) Some(token) else None
+  def create(user: User) = {
+    val token = java.util.UUID.randomUUID().toString
+    val result = using(DB(ConnectionPool.borrow())) { db =>
+      db localTx { implicit session =>
+        sql"INSERT INTO user_token(user_id, user_token_value) VALUES (${user.id}, ${token})"
+          .update()
+          .apply()
+      }
     }
+    if (result > 0) forToken(token) else None
   }
 }

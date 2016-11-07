@@ -13,11 +13,11 @@ case class SignUpRequest(
 
 class SignUpController extends Controller {
 
-  get("/signup") { request: Request =>
+  filter[GuestFilter].get("/signup") { request: Request =>
     response.ok.file("/html/signuppage.html")
   }
 
-  post("/signup") { request: SignUpRequest =>
+  filter[GuestFilter].post("/signup") { request: SignUpRequest =>
     if (User.findByName(request.`user_name`).nonEmpty) response.preconditionFailed("User already exists")
     else {
       User.create(request.`user_name`, request.`user_pass`, request.`user_email`) match {
