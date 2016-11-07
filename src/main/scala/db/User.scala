@@ -16,24 +16,9 @@ case class User(id: BigInt,
   def isCorrectPassword(pass: String): Boolean = pass.isBcrypted(password)
   def isCorrectPassword(pass: Option[String]): Boolean = pass.exists(_.isBcrypted(password))
 
-  def accessTokens = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"SELECT user_access_token FROM user_access WHERE user_id = ${id}"
-        .map(x => x.string("access_token"))
-        .list
-        .apply()
-    }
-  }
+  def accessTokens = UserAuthToken.forUser(this)
 
-  def createAccessToken = using(DB(ConnectionPool.borrow())) { db =>
-    db localTx { implicit session =>
-      val uuid = java.util.UUID.randomUUID().toString
-      val result = sql"INSERT INTO user_access VALUES(${uuid}, ${id})"
-        .update()
-        .apply()
-      if (result > 0) Some(uuid) else None
-    }
-  }
+  def createAccessToken = UserAuthToken.create(this)
 
   def authReferences = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
