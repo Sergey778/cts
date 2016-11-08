@@ -80,7 +80,7 @@ object QuestionGroup {
             SELECT
             question_group_id, question_group_name, question_group_creator_id, question_group_parent_id
             FROM question_group
-            WHERE question_group_creator_id = ${id}
+            WHERE question_group_id = ${id}
           """
           .map(rs => fromResultSet(rs))
           .single()

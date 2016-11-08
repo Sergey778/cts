@@ -14,6 +14,17 @@ case class GroupsList(override val list: List[HierarchyListElement]) extends Hie
 @Mustache("profile_create_question_group")
 case class CreateQuestionGroup(override val list: List[HierarchySelectElement]) extends HierarchySelect
 
+@Mustache("group_template")
+case class GroupTemplate(group: QuestionGroup) {
+  val groupName = group.name
+  val userRef = s"/profile/${group.creator.id}"
+  val userName = group.creator.name
+  val groupRef = s"/profile/question-groups/${group.id}"
+  val parentGroupRef = group.parentGroup map { pg =>
+    s"/profile/question-groups/${pg.id}"
+  } getOrElse "#"
+}
+
 class QuestionGroupController extends Controller {
 
   def questionGroupToQGroup(t: List[QuestionGroup]): List[HierarchyListElement] = {
@@ -45,6 +56,14 @@ class QuestionGroupController extends Controller {
     t map { questionGroup =>
       response.ok.html("<body>It's okay!</body>")
     } getOrElse response.badRequest
+  }
+
+  filter[UserFilter].get("/profile/question-groups/:id") { request: Request =>
+    request.params.get("id") flatMap { id =>
+      QuestionGroup.findById(BigInt(id))
+    } map { group =>
+      GroupTemplate(group)
+    }
   }
 
 }
