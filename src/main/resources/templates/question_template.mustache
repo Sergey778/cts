@@ -12,4 +12,15 @@
         Group:
         <a href="{{groupRef}}">{{groupName}}</a>
     </div>
+    <div>
+        Answers:
+        {{#answers}}
+            <div>
+                {{answer}} by {{answerAuthor}}
+            </div>
+        {{/answers}}
+    </div>
+    <div>
+        <a href="/profile/answers/add/{{questionId}}">Add answer</a>
+    </div>
 </body>

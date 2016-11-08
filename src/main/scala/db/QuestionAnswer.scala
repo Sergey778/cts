@@ -5,6 +5,20 @@ import scalikejdbc._
 case class QuestionAnswer(question: Question, answer: String, creator: User)
 
 object QuestionAnswer {
+  def create(question: Question, user: User, answer: String) = {
+    val result = using(DB(ConnectionPool.borrow())) { db =>
+      db localTx { implicit session =>
+        sql"""
+             INSERT INTO question_answer(question_id, question_answer_value, question_answer_creator_id)
+              VALUES (${question.id}, ${answer}, ${user.id})
+           """
+          .update()
+          .apply()
+      }
+    }
+    if (result > 0) Some(QuestionAnswer(question, answer, user)) else None
+  }
+
   def fromQuestion(question: Question) = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""
