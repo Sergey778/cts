@@ -17,6 +17,7 @@ class Server extends HttpServer {
       .add[auth.SignUpController]
       .add[auth.SignUpConfirmController]
       .add[profile.ProfileController]
+      .add[profile.QuestionGroupController]
   }
 
 }

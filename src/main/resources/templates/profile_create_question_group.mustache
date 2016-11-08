@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Create Question Group</title>
+</head>
+<body>
+    <form method="post">
+        <div>
+            <input type="text" placeholder="Name" id="name" name="name">
+        </div>
+        <div>
+            <select title="Choose category" id="id" name="id">
+                <option disabled>Choose category</option>
+                {{>hierarchy_select}}
+            </select>
+        </div>
+        <div>
+            <input type="submit" value="Create">
+        </div>
+    </form>
+</body>
