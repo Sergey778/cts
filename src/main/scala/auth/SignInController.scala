@@ -1,5 +1,7 @@
 package auth
 
+import java.util.Calendar
+
 import com.twitter.finagle.http.{Cookie, Request, Response, Status}
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.request.FormParam
@@ -32,7 +34,7 @@ class SignInController extends Controller {
 
   protected def okWithToken(user: User) = user.createAccessToken map { token =>
     val cookie = new Cookie("access_token", token.token)
-    cookie.maxAge = Duration.fromNanoseconds(token.validUntil.getNanos)
+    cookie.maxAge = Duration.fromMilliseconds(token.validUntil.getTime - Calendar.getInstance().getTime.getTime)
     response.ok("It's ok").cookie(cookie)
   }
 }

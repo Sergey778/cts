@@ -52,7 +52,7 @@ object UserAuthToken {
 
   private def fromResultSet(rs: WrappedResultSet, user: User) = UserAuthToken(
     user = user,
-    token = rs.string("user_token_valid_until"),
+    token = rs.string("user_token_value"),
     validUntil = rs.timestamp("user_token_valid_until")
   )
 
