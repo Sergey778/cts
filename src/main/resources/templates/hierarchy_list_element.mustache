@@ -1,0 +1,8 @@
+<li>
+    {{name}}
+    {{^empty}}<ul>{{/empty}}
+    {{#childs}}
+        {{>hierarchy_list_element}}
+    {{/childs}}
+    {{^empty}}</ul>{{/empty}}
+</li>
