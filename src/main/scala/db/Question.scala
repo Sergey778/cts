@@ -36,14 +36,17 @@ object Question {
     }
   }
   // REWRITE THIS:
-  def fromResultSet(rs: WrappedResultSet) = Question(
+  def fromResultSet(rs: WrappedResultSet,
+                    group: Option[QuestionGroup] = None) = Question(
     id = rs.bigInt("question_id"),
     creator = User.findById(rs.bigInt("question_creator_id")).get,
     modifier = User.findById(rs.bigInt("question_modifier_id")).get,
     createTime = rs.timestamp("question_create_time"),
     modifyTime = rs.timestamp("question_modify_time"),
     text = rs.string("question_text"),
-    group = QuestionGroup.findById(rs.bigInt("question_group_id")).get
+    group = group.getOrElse(
+        QuestionGroup.findById(rs.bigInt("question_group_id")).get
+    )
   )
 
   def findByCreator(user: User) = using(DB(ConnectionPool.borrow())) { db =>

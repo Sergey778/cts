@@ -4,6 +4,34 @@ import scalikejdbc._
 
 case class QuestionGroup(id: BigInt, name: String, creator: User, parentGroup: Option[QuestionGroup]) {
   def childs = QuestionGroup.findByParent(id)
+
+  def questions = using(DB(ConnectionPool.borrow())) { db =>
+    db readOnly { implicit session =>
+      sql"""
+           SELECT
+            question_id,
+            question_creator_id,
+            question_modifier_id,
+            question_create_time,
+            question_modify_time,
+            question_text
+           FROM question
+           WHERE question_group_id = ${id}
+         """
+        .map(x => Question.fromResultSet(x, group = Some(this)))
+        .list()
+        .apply()
+    }
+  }
+
+  def questionsCount = using(DB(ConnectionPool.borrow())) { db =>
+    db readOnly { implicit session =>
+      sql"SELECT COUNT(question_id) FROM question WHERE question_group_id = ${id}"
+        .map(x => x.int(1))
+        .single()
+        .apply()
+    }
+  }
 }
 
 object QuestionGroup {
