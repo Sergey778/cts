@@ -12,6 +12,7 @@ class Server extends HttpServer {
       .filter[LoggingMDCFilter[Request, Response]]
       .filter[TraceIdMDCFilter[Request, Response]]
       .filter[CommonFilters]
+      .filter[ResponseTimeFilter]
       .add[assets.AssetsController]
       .add[auth.SignInController]
       .add[auth.SignUpController]
