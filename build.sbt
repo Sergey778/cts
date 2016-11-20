@@ -31,6 +31,8 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "finatra-http" % versions.finatra,
   "com.twitter" %% "finatra-httpclient" % versions.finatra,
 
+  "com.lihaoyi" %% "scalatags" % "0.6.1",
+
   "commons-dbcp" % "commons-dbcp" % "1.4",
   "commons-pool" % "commons-pool" % "1.6",
   "org.scalikejdbc" %% "scalikejdbc" % "2.4.2",

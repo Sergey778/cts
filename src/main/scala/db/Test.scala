@@ -21,7 +21,7 @@ case class Test(id: BigInt, name: String, creator: User) {
 
   def groupQuestions: List[Question] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
-      sql"SELECT question_group_id, test_id, question_count FROM test_question_group"
+      sql"SELECT question_group_id, test_id, question_count FROM test_question_group WHERE test_id = ${id}"
         .map(x => (QuestionGroup.findById(x.bigInt("question_group_id")), x.int("question_count")))
         .list()
         .apply()
@@ -45,7 +45,7 @@ case class Test(id: BigInt, name: String, creator: User) {
       db localTx { implicit session =>
         sql"""
           INSERT INTO test_question_group (test_id, question_group_id, question_count)
-              VALUES (${id}, {questionGroup.id}, ${realCount})
+              VALUES (${id}, ${questionGroup.id}, ${realCount})
          """
           .update()
           .apply()
