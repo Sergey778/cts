@@ -71,7 +71,9 @@ object UserAuthRef {
   def forReference(token: String) = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""SELECT user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until
-            FROM user_auth_ref"""
+            FROM user_auth_ref
+            WHERE user_auth_ref = ${token}
+        """
         .map(x => resultSetToAuthRef(x))
         .single()
         .apply()
