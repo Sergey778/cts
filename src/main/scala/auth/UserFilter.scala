@@ -4,7 +4,7 @@ import com.twitter.finagle.http.{Request, Response, Status}
 import com.twitter.finagle.{Service, SimpleFilter}
 import com.twitter.util.Future
 import db.UserAuthToken
-import util.UserContext
+import util.{Paths, UserContext}
 
 /**
   * Created by Sergey on 07.11.16.
@@ -19,7 +19,7 @@ class UserFilter extends SimpleFilter[Request, Response] {
 
   private lazy val relocationResponse = {
     val response = Response(Status.TemporaryRedirect)
-    response.location = "/signin"
+    response.location = Paths.signIn
     Future.value(response)
   }
 }

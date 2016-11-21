@@ -3,6 +3,7 @@ package auth
 import com.twitter.finagle.http.{Request, Response, Status}
 import com.twitter.finagle.{Service, SimpleFilter}
 import com.twitter.util.Future
+import util.Paths
 
 /**
   * Created by Sergey on 08.11.16.
@@ -15,7 +16,7 @@ class GuestFilter extends SimpleFilter[Request, Response]{
 
   private lazy val redirectResponse = {
     val response = Response(Status.TemporaryRedirect)
-    response.location = "/profile"
+    response.location = Paths.profile
     Future.value(response)
   }
 }

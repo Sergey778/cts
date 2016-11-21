@@ -20,7 +20,7 @@ class SignUpConfirmController extends Controller {
     } getOrElse response.internalServerError.body("<body>Server error</body>").contentType(MediaType.Html)
   }
 
-  get("/signupconfirminfo") { request: Request =>
+  get(Paths.signUpConfirmInfo) { request: Request =>
     response.ok.body("<body>Confirmation email has been sent. Please check it.</body>").contentType(MediaType.Html)
   }
 }
