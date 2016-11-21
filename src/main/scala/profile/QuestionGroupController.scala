@@ -5,6 +5,8 @@ import com.twitter.finagle.http.Request
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.response.Mustache
 import db.QuestionGroup
+import util.Paths
+import util.Paths.PathExtension
 import util.UserContext.RequestAdditions
 import util.templates.{HierarchyList, HierarchyListElement, HierarchySelect, HierarchySelectElement}
 
@@ -17,11 +19,11 @@ case class CreateQuestionGroup(override val list: List[HierarchySelectElement]) 
 @Mustache("group_template")
 case class GroupTemplate(group: QuestionGroup) {
   val groupName = group.name
-  val userRef = s"/profile/${group.creator.id}"
+  val userRef = Paths.profile.element(s"${group.creator.id}")
   val userName = group.creator.name
-  val groupRef = s"/profile/question-groups/${group.id}"
+  val groupRef = Paths.profileQuestionGroups.element(s"${group.id}")
   val parentGroupRef = group.parentGroup map { pg =>
-    s"/profile/question-groups/${pg.id}"
+    Paths.profileQuestionGroups.element(s"$pg.id")
   } getOrElse "#"
 }
 
@@ -37,15 +39,15 @@ class QuestionGroupController extends Controller {
     else t.map(x => HierarchySelectElement(x.id.toString, x.name, questionGroupToQGroup2(x.childs, margin + 2), margin))
   }
 
-  filter[UserFilter].get("/profile/question-groups") { request: Request =>
+  filter[UserFilter].get(Paths.profileQuestionGroups) { request: Request =>
     GroupsList(questionGroupToQGroup(QuestionGroup.findByUser(request.user)))
   }
 
-  filter[UserFilter].get("/profile/question-groups/create") { request: Request =>
+  filter[UserFilter].get(Paths.profileQuestionGroupsCreate) { request: Request =>
     CreateQuestionGroup(questionGroupToQGroup2(QuestionGroup.findByUser(request.user)))
   }
 
-  filter[UserFilter].post("/profile/question-groups/create") { request: Request =>
+  filter[UserFilter].post(Paths.profileQuestionGroupsCreate) { request: Request =>
     val creator = request.user
     val name = request.params.get("name")
     val parentId = request.params.get("id").map(x => BigInt(x))
@@ -58,7 +60,7 @@ class QuestionGroupController extends Controller {
     } getOrElse response.badRequest
   }
 
-  filter[UserFilter].get("/profile/question-groups/:id") { request: Request =>
+  filter[UserFilter].get(Paths.profileQuestionGroups.element("id")) { request: Request =>
     request.params.get("id") flatMap { id =>
       QuestionGroup.findById(BigInt(id))
     } map { group =>

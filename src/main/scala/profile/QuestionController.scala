@@ -5,6 +5,8 @@ import com.twitter.finagle.http.Request
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.response.Mustache
 import db.{Question, QuestionAnswer, QuestionGroup}
+import util.Paths
+import util.Paths.PathExtension
 import util.UserContext.RequestAdditions
 import util.templates.{HierarchySelect, HierarchySelectElement}
 
@@ -20,7 +22,7 @@ case class AnswerListElement(answer: String, answerAuthor: String)
 @Mustache("question_template")
 case class QuestionTemplate(question: Question) {
   val questionName = question.text
-  val groupRef = s"/profile/question-groups/${question.group.id}"
+  val groupRef = Paths.profileQuestionGroups.element(question.group.id.toString)
   val groupName = question.group.name
   val answers = QuestionAnswer
     .fromQuestion(question)
@@ -37,7 +39,7 @@ case class AddAnswerTemplate(question: Question) {
 case class CreateQuestionTemplate(override val list: List[HierarchySelectElement]) extends HierarchySelect
 
 class QuestionController extends Controller {
-  filter[UserFilter].get("/profile/questions") { request: Request =>
+  filter[UserFilter].get(Paths.profileQuestions) { request: Request =>
     QuestionListTemplate(
       Question
         .findByCreator(request.user)
@@ -45,7 +47,7 @@ class QuestionController extends Controller {
     )
   }
 
-  filter[UserFilter].get("/profile/questions/:id") { request: Request =>
+  filter[UserFilter].get(Paths.profileQuestions.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { id =>
       Question.findById(BigInt(id))
     } map { question =>
@@ -53,7 +55,7 @@ class QuestionController extends Controller {
     }
   }
 
-  filter[UserFilter].get("/profile/questions/create") { request: Request =>
+  filter[UserFilter].get(Paths.profileQuestionCreate) { request: Request =>
 
     def questionGroupToQGroup2(t: List[QuestionGroup], margin: Int = 0): List[HierarchySelectElement] = {
       if (t.isEmpty) List()
@@ -63,7 +65,7 @@ class QuestionController extends Controller {
     CreateQuestionTemplate(questionGroupToQGroup2(QuestionGroup.findByUser(request.user)))
   }
 
-  filter[UserFilter].post("/profile/questions/create") { request: Request =>
+  filter[UserFilter].post(Paths.profileQuestionCreate) { request: Request =>
     val questionText = request.params.get("questionText")
     val questionGroup = request.params.get("questionGroup").flatMap(x => QuestionGroup.findById(BigInt(x)))
     val question = (questionText, questionGroup) match {
@@ -75,7 +77,7 @@ class QuestionController extends Controller {
     } getOrElse response.badRequest
   }
 
-  filter[UserFilter].get("/profile/answers/add/:id") { request: Request =>
+  filter[UserFilter].get(Paths.profileAnswersAdd.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { id =>
       Question.findById(BigInt(id))
     } map { question =>
@@ -83,13 +85,13 @@ class QuestionController extends Controller {
     } getOrElse response.badRequest
   }
 
-  filter[UserFilter].post("/profile/answers/add/:id") { request: Request =>
+  filter[UserFilter].post(Paths.profileAnswersAdd.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { id =>
       Question.findById(BigInt(id))
     } map { question =>
       QuestionAnswer.create(question, request.user, request.params.getOrElse("answer", ""))
     } map { answer =>
-      response.temporaryRedirect.location(s"/profile/questions/${request.params("id")}")
+      response.temporaryRedirect.location(Paths.profileQuestions.element(request.params("id")))
     } getOrElse response.badRequest
   }
 
