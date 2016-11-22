@@ -42,6 +42,51 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
         .apply()
     }
   }
+
+  def members: List[User] = using(DB(ConnectionPool.borrow())) { db =>
+    db readOnly { implicit session =>
+      sql"""
+           SELECT user_id FROM user_groups WHERE user_group_id = ${id}
+         """
+        .map(rs => User.findById(rs.bigInt("user_id")))
+        .list()
+        .apply()
+        .flatten
+    }
+  }
+
+  def fullMembers: List[User] = using(DB(ConnectionPool.borrow())) { db =>
+    db readOnly { implicit session =>
+      sql"""
+           SELECT user_id FROM user_groups WHERE user_group_id = ${id} AND full_member = 'T'
+         """
+        .map(rs => User.findById(rs.bigInt("user_id")))
+        .list()
+        .apply()
+        .flatten
+    }
+  }
+
+  def makeFullMember(user: User) = using(DB(ConnectionPool.borrow())) { db =>
+    val result = db localTx { implicit session =>
+      sql"UPDATE user_groups SET full_member = 'T' WHERE user_group_id = ${id} AND user_id = ${user.id}"
+        .update()
+        .apply()
+    }
+    result > 0
+  }
+
+  def addMember(user: User) = using(DB(ConnectionPool.borrow())) { db =>
+    val result = db localTx { implicit session =>
+      sql"""
+           INSERT INTO user_groups(user_id, user_group_id, full_member)
+           VALUES (${user.id}, ${id}, 'F')
+         """
+        .update()
+        .apply()
+    }
+    if (result > 0) Some(this) else None
+  }
 }
 
 object UserGroup {
@@ -74,7 +119,16 @@ object UserGroup {
           .apply()
       }
     }
-    if (result > 0) Some(UserGroup(id, name, leader, parentGroup)) else None
+    if (result > 0) {
+      val group = UserGroup(id, name, leader, parentGroup)
+      group
+        .addMember(leader)
+        .map(g => g.makeFullMember(leader))
+        .map(x => group)
+    } else {
+      None
+    }
+
   }
 
   def all = using(DB(ConnectionPool.borrow())) { db =>

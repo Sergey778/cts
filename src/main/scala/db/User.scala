@@ -60,6 +60,36 @@ case class User(id: BigInt,
     }
     result > 0
   }
+
+  def isMemberOfGroup(g: UserGroup) = using(DB(ConnectionPool.borrow())) { db =>
+    val result = db readOnly { implicit session =>
+      sql"""
+           SELECT COUNT(*) FROM user_groups
+           WHERE user_id = ${id} AND user_group_id = ${g.id} AND full_member = 'T'
+         """
+        .map(rs => rs.bigInt(1))
+        .single()
+        .apply()
+    }
+    result.exists(x => BigInt(x) > 0)
+  }
+
+  def groups = using(DB(ConnectionPool.borrow())) { db =>
+    db readOnly { implicit session =>
+      sql"""
+           SELECT
+            u.user_group_id "user_group_id",
+            u.user_group_name "user_group_name",
+            u.user_group_leader "user_group_leader",
+            u.user_group_parent_id "user_group_parent_id"
+           FROM user_group u JOIN user_groups g ON u.user_group_id = g.user_group_id
+           WHERE g.user_id = ${id}
+         """
+        .map(rs => UserGroup.fromResultSet(rs))
+        .list()
+        .apply()
+    }
+  }
 }
 
 object User {

@@ -18,6 +18,8 @@ object Paths {
     def element(elementName: String) = s"$path/$elementName"
   }
 
+  final val domain = config("domain.url") getOrElse "localhost:8888"
+
   final val signIn = config("auth.signIn") getOrElse "/signin"
   final val signUp = config("auth.signUp") getOrElse "/signup"
   final val signUpConfirmation = config("auth.signUpConfirm") getOrElse "/signupconfirm"
@@ -38,4 +40,8 @@ object Paths {
   final val userGroupsAll = config("usergroups.all") getOrElse "/user-groups/all"
   final val userGroupsMy = config("usergroups.my") getOrElse "/user-groups/my"
   final val userGroupsCreate = config("usergroups.create") getOrElse "/user-groups/create"
+  final val userGroupsAcceptInvite = config("usergroups.invite.accept") getOrElse "/user-groups/invite-accept"
+  final val userGroupsInviteSend = config("usergroups.invite.send") getOrElse "/user-groups/invite"
+  final val userGroupsInviteApply = config("usergroups.invite.apply") getOrElse "/user-groups/apply-group"
+  final val userGroupsInviteUser = config("usergroups.invite.senduser") getOrElse "/user-groups/invite-user"
 }
