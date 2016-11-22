@@ -44,4 +44,10 @@ object Paths {
   final val userGroupsInviteSend = config("usergroups.invite.send") getOrElse "/user-groups/invite"
   final val userGroupsInviteApply = config("usergroups.invite.apply") getOrElse "/user-groups/apply-group"
   final val userGroupsInviteUser = config("usergroups.invite.senduser") getOrElse "/user-groups/invite-user"
+
+  final val courses = config("courses.index") getOrElse "/courses"
+  final val coursesAll = config("courses.all") getOrElse "/courses/all"
+  final val coursesCreate = config("courses.create") getOrElse "/courses/create"
+  final val coursesAddUserGroup = config("courses.usergroups.add") getOrElse "/courses/user-groups/add"
+  final val coursesAddTest = config("courses.tests.add") getOrElse "/courses/tests/add"
 }
