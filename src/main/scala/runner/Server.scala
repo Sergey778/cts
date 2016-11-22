@@ -21,6 +21,7 @@ class Server extends HttpServer {
       .add[profile.QuestionGroupController]
       .add[profile.QuestionController]
       .add[profile.TestController]
+      .add[profile.UserGroupController]
   }
 
 }

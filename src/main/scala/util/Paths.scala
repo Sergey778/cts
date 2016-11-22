@@ -33,4 +33,9 @@ object Paths {
   final val profileQuestionGroups = config("profile.questionGroups") getOrElse "/profile/question-groups"
   final val profileQuestionGroupsCreate =
     config("profile.questionGroups.create") getOrElse "/profile/question-groups/create"
+
+  final val userGroups = config("usergroups.index") getOrElse "/user-groups"
+  final val userGroupsAll = config("usergroups.all") getOrElse "/user-groups/all"
+  final val userGroupsMy = config("usergroups.my") getOrElse "/user-groups/my"
+  final val userGroupsCreate = config("usergroups.create") getOrElse "/user-groups/create"
 }
