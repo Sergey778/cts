@@ -10,7 +10,7 @@ object QuestionAnswer {
       db localTx { implicit session =>
         sql"""
              INSERT INTO question_answer(question_id, question_answer_value, question_answer_creator_id)
-              VALUES (${question.id}, ${answer}, ${user.id})
+              VALUES (${question.id}, $answer, ${user.id})
            """
           .update()
           .apply()

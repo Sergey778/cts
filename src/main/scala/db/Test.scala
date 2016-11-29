@@ -21,7 +21,7 @@ case class Test(id: BigInt, name: String, creator: User) {
 
   def groupQuestions: List[Question] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
-      sql"SELECT question_group_id, test_id, question_count FROM test_question_group WHERE test_id = ${id}"
+      sql"SELECT question_group_id, test_id, question_count FROM test_question_group WHERE test_id = $id"
         .map(x => (QuestionGroup.findById(x.bigInt("question_group_id")), x.int("question_count")))
         .list()
         .apply()
@@ -33,7 +33,7 @@ case class Test(id: BigInt, name: String, creator: User) {
 
   def addQuestion(question: Question) = using(DB(ConnectionPool.borrow())) { db =>
     db localTx { implicit session =>
-      sql"INSERT INTO test_question (test_id, question_id) VALUES (${id}, ${question.id})"
+      sql"INSERT INTO test_question (test_id, question_id) VALUES ($id, ${question.id})"
         .update()
         .apply()
     }
@@ -45,7 +45,7 @@ case class Test(id: BigInt, name: String, creator: User) {
       db localTx { implicit session =>
         sql"""
           INSERT INTO test_question_group (test_id, question_group_id, question_count)
-              VALUES (${id}, ${questionGroup.id}, ${realCount})
+              VALUES ($id, ${questionGroup.id}, $realCount)
          """
           .update()
           .apply()
@@ -72,7 +72,7 @@ object Test {
       db localTx { implicit session =>
         sql"""
             INSERT INTO test (test_id, test_name, test_creator_id)
-              VALUES (${BigInt(id)}, ${name}, ${creator.id})
+              VALUES (${BigInt(id)}, $name, ${creator.id})
          """
           .update()
           .apply()
@@ -90,7 +90,7 @@ object Test {
 
   def fromId(id: BigInt) = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
-      sql"SELECT test_id, test_name, test_creator_id FROM test WHERE test_id = ${id}"
+      sql"SELECT test_id, test_name, test_creator_id FROM test WHERE test_id = $id"
         .map(x => fromResultSet(x))
         .single()
         .apply()

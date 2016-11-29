@@ -26,7 +26,7 @@ object UserAuthToken {
               ut.user_token_value user_token_value
             FROM user_token ut
             JOIN "user" u ON ut.user_id = u.user_id
-            WHERE ut.user_token_value = ${token} AND ut.user_token_valid_until > now()
+            WHERE ut.user_token_value = $token AND ut.user_token_valid_until > now()
          """
         .map(x => fromResultSet(x))
         .single()
@@ -63,7 +63,7 @@ object UserAuthToken {
     val token = java.util.UUID.randomUUID().toString
     val result = using(DB(ConnectionPool.borrow())) { db =>
       db localTx { implicit session =>
-        sql"INSERT INTO user_token(user_id, user_token_value) VALUES (${user.id}, ${token})"
+        sql"INSERT INTO user_token(user_id, user_token_value) VALUES (${user.id}, $token)"
           .update()
           .apply()
       }

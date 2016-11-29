@@ -13,7 +13,7 @@ case class Course(id: BigInt, name: String, description: String, creator: User) 
             u.user_group_name "user_group_name",
             u.user_group_parent_id "user_group_parent_id"
            FROM course_groups c JOIN user_group u ON c.group_id = u.user_group_id
-           WHERE c.course_id = ${id}
+           WHERE c.course_id = $id
          """
         .map(rs => UserGroup.fromResultSet(rs))
         .list()
@@ -29,7 +29,7 @@ case class Course(id: BigInt, name: String, description: String, creator: User) 
             t.test_name "test_name",
             t.test_creator_id "test_creator_id"
            FROM course_tests c JOIN test t ON c.test_id = t.test_id
-           WHERE c.course_id = ${id}
+           WHERE c.course_id = $id
          """
         .map(rs => Test.fromResultSet(rs))
         .list()
@@ -41,7 +41,7 @@ case class Course(id: BigInt, name: String, description: String, creator: User) 
     val result = db localTx { implicit session =>
       sql"""
            INSERT INTO course_groups (course_id, group_id)
-           VALUES (${id}, ${group.id})
+           VALUES ($id, ${group.id})
          """
         .update()
         .apply()
@@ -53,7 +53,7 @@ case class Course(id: BigInt, name: String, description: String, creator: User) 
     val result = db localTx { implicit session =>
       sql"""
            INSERT INTO course_tests (course_id, test_id)
-           VALUES (${id}, ${test.id})
+           VALUES ($id, ${test.id})
          """
         .update()
         .apply()
@@ -78,7 +78,7 @@ object Course {
       val result = db localTx { implicit session =>
         sql"""
              INSERT INTO course (course_id, course_name, course_description, course_creator_id)
-             VALUES (${id}, ${name}, ${description}, ${creator.id})
+             VALUES ($id, $name, $description, ${creator.id})
            """
           .update()
           .apply()
@@ -105,7 +105,7 @@ object Course {
       sql"""
            SELECT course_id, course_name, course_description, course_creator_id
            FROM course
-           WHERE course_id = ${id}
+           WHERE course_id = $id
          """
         .map(rs => fromResultSet(rs))
         .single()

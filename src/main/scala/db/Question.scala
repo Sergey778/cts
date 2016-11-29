@@ -28,7 +28,7 @@ object Question {
             question_group_id
            FROM
             question
-           WHERE question_id = ${id}
+           WHERE question_id = $id
          """
         .map(x => fromResultSet(x))
         .single()
@@ -85,7 +85,7 @@ object Question {
       db localTx { implicit session =>
         sql"""
            INSERT INTO question (question_id, question_creator_id, question_modifier_id, question_text, question_group_id)
-            VALUES (${BigInt(id)}, ${creator.id}, ${creator.id}, ${text}, ${group.id})
+            VALUES (${BigInt(id)}, ${creator.id}, ${creator.id}, $text, ${group.id})
          """
           .update()
           .apply()

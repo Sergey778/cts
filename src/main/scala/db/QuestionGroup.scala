@@ -16,7 +16,7 @@ case class QuestionGroup(id: BigInt, name: String, creator: User, parentGroup: O
             question_modify_time,
             question_text
            FROM question
-           WHERE question_group_id = ${id}
+           WHERE question_group_id = $id
          """
         .map(x => Question.fromResultSet(x, group = Some(this)))
         .list()
@@ -26,7 +26,7 @@ case class QuestionGroup(id: BigInt, name: String, creator: User, parentGroup: O
 
   def questionsCount = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
-      sql"SELECT COUNT(question_id) FROM question WHERE question_group_id = ${id}"
+      sql"SELECT COUNT(question_id) FROM question WHERE question_group_id = $id"
         .map(x => x.int(1))
         .single()
         .apply()
@@ -52,7 +52,7 @@ object QuestionGroup {
              INSERT INTO question_group
              (question_group_id, question_group_name, question_group_creator_id, question_group_parent_id)
              VALUES
-             (${BigInt(id)}, ${name}, ${creator.id}, ${parentGroup.map(x => x.id)})
+             (${BigInt(id)}, $name, ${creator.id}, ${parentGroup.map(x => x.id)})
            """
         .update()
         .apply()
@@ -92,7 +92,7 @@ object QuestionGroup {
             SELECT
             question_group_id, question_group_name, question_group_creator_id, question_group_parent_id
             FROM question_group
-            WHERE question_group_id = ${id}
+            WHERE question_group_id = $id
           """
           .map(rs => fromResultSet(rs))
           .single()
@@ -108,7 +108,7 @@ object QuestionGroup {
             SELECT
             question_group_id, question_group_name, question_group_creator_id, question_group_parent_id
             FROM question_group
-            WHERE question_group_id = ${id}
+            WHERE question_group_id = $id
           """
           .map(rs => fromResultSet(rs))
           .single()
@@ -124,7 +124,7 @@ object QuestionGroup {
             SELECT
             question_group_id, question_group_name, question_group_creator_id, question_group_parent_id
             FROM question_group
-            WHERE question_group_parent_id = ${id}
+            WHERE question_group_parent_id = $id
           """
           .map(rs => fromResultSet(rs))
           .list()

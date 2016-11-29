@@ -22,12 +22,11 @@ class UserTest extends FlatSpec with Matchers {
   "User" can "be obtained from functions that start with `find`" in {
     val users = (User.findByName(testName), User.findByEmail(testEmail))
     users match {
-      case (Some(u1), Some(u2)) => {
+      case (Some(u1), Some(u2)) =>
         u1 shouldEqual u2
         val u3 = User.findById(u1.id)
         assert(u3.nonEmpty)
         u3.get shouldEqual u2
-      }
       case _ => fail()
     }
   }

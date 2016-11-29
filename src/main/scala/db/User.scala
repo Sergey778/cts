@@ -23,7 +23,7 @@ case class User(id: BigInt,
   def authReferences = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""SELECT user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until
-            FROM user_auth_ref WHERE user_id = ${id} AND user_auth_ref_valid_until > now()"""
+            FROM user_auth_ref WHERE user_id = $id AND user_auth_ref_valid_until > now()"""
         .map(x => UserAuthRef.resultSetToAuthRef(x, this))
         .list
         .apply()
@@ -35,7 +35,7 @@ case class User(id: BigInt,
     val now = Timestamp.valueOf(LocalDateTime.now().plusDays(1))
     db localTx { implicit session =>
       sql"""INSERT INTO user_auth_ref(user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until)
-               VALUES (${id}, ${uuid}, ${refType.toString}, ${now})"""
+               VALUES ($id, $uuid, ${refType.toString}, $now)"""
         .update()
         .apply()
     }
@@ -44,7 +44,7 @@ case class User(id: BigInt,
 
   def confirm = using(DB(ConnectionPool.borrow())) { db =>
     db localTx { implicit session =>
-      val result = sql"""UPDATE "user" SET user_confirmed = TRUE WHERE user_id = ${id}"""
+      val result = sql"""UPDATE "user" SET user_confirmed = TRUE WHERE user_id = $id"""
         .update()
         .apply()
       if (result > 0) Some(User(id, name, password, email, signupTime, confirmed = true))
@@ -54,7 +54,7 @@ case class User(id: BigInt,
 
   def delete = using(DB(ConnectionPool.borrow())) { db =>
     val result = db localTx { implicit session =>
-      sql"""DELETE FROM "user" WHERE user_id = ${id}"""
+      sql"""DELETE FROM "user" WHERE user_id = $id"""
         .update()
         .apply()
     }
@@ -65,7 +65,7 @@ case class User(id: BigInt,
     val result = db readOnly { implicit session =>
       sql"""
            SELECT COUNT(*) FROM user_groups
-           WHERE user_id = ${id} AND user_group_id = ${g.id} AND full_member = 'T'
+           WHERE user_id = $id AND user_group_id = ${g.id} AND full_member = 'T'
          """
         .map(rs => rs.bigInt(1))
         .single()
@@ -83,7 +83,7 @@ case class User(id: BigInt,
             u.user_group_leader "user_group_leader",
             u.user_group_parent_id "user_group_parent_id"
            FROM user_group u JOIN user_groups g ON u.user_group_id = g.user_group_id
-           WHERE g.user_id = ${id}
+           WHERE g.user_id = $id
          """
         .map(rs => UserGroup.fromResultSet(rs))
         .list()
@@ -124,7 +124,7 @@ object User {
     val result = using(DB(ConnectionPool.borrow())) { db =>
       db localTx { implicit session =>
         sql""" INSERT INTO "user" (user_email, user_name, user_password)
-          VALUES(${email}, ${name}, ${password.bcrypt})
+          VALUES($email, $name, ${password.bcrypt})
         """.update().apply()
       }
     }

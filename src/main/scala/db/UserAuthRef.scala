@@ -50,7 +50,7 @@ case class UserAuthRef(user: User, reference: String, refType: AuthRefType, vali
 
   def remove = using(DB(ConnectionPool.borrow())) { db =>
     db localTx { implicit session =>
-      sql"DELETE FROM user_auth_ref WHERE user_auth_ref = ${reference}"
+      sql"DELETE FROM user_auth_ref WHERE user_auth_ref = $reference"
         .update()
         .apply()
     }
@@ -72,7 +72,7 @@ object UserAuthRef {
     db readOnly { implicit session =>
       sql"""SELECT user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until
             FROM user_auth_ref
-            WHERE user_auth_ref = ${token}
+            WHERE user_auth_ref = $token
         """
         .map(x => resultSetToAuthRef(x))
         .single()

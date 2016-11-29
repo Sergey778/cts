@@ -12,7 +12,7 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
            SELECT
             user_id, user_name, user_email, user_password, user_signup_time, user_confirmed
            FROM "user"
-           WHERE user_group_id = ${id}
+           WHERE user_group_id = $id
          """
         .map(rs => User.fromResultSet(rs))
         .list()
@@ -35,7 +35,7 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
          SELECT
           user_group_id, user_group_leader, user_group_name, user_group_parent_id
          FROM user_group
-         WHERE user_group_parent_id = ${id}
+         WHERE user_group_parent_id = $id
          """
         .map(x => UserGroup.fromResultSet(x))
         .list()
@@ -46,7 +46,7 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
   def members: List[User] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""
-           SELECT user_id FROM user_groups WHERE user_group_id = ${id}
+           SELECT user_id FROM user_groups WHERE user_group_id = $id
          """
         .map(rs => User.findById(rs.bigInt("user_id")))
         .list()
@@ -58,7 +58,7 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
   def fullMembers: List[User] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""
-           SELECT user_id FROM user_groups WHERE user_group_id = ${id} AND full_member = 'T'
+           SELECT user_id FROM user_groups WHERE user_group_id = $id AND full_member = 'T'
          """
         .map(rs => User.findById(rs.bigInt("user_id")))
         .list()
@@ -69,7 +69,7 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
 
   def makeFullMember(user: User) = using(DB(ConnectionPool.borrow())) { db =>
     val result = db localTx { implicit session =>
-      sql"UPDATE user_groups SET full_member = 'T' WHERE user_group_id = ${id} AND user_id = ${user.id}"
+      sql"UPDATE user_groups SET full_member = 'T' WHERE user_group_id = $id AND user_id = ${user.id}"
         .update()
         .apply()
     }
@@ -80,7 +80,7 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
     val result = db localTx { implicit session =>
       sql"""
            INSERT INTO user_groups(user_id, user_group_id, full_member)
-           VALUES (${user.id}, ${id}, 'F')
+           VALUES (${user.id}, $id, 'F')
          """
         .update()
         .apply()
@@ -113,7 +113,7 @@ object UserGroup {
         sql"""
              INSERT INTO
               user_group (user_group_id, user_group_leader, user_group_name, user_group_parent_id)
-             VALUES (${id}, ${leader.id}, ${name}, ${parentGroup.map(x => x.id)})
+             VALUES ($id, ${leader.id}, $name, ${parentGroup.map(x => x.id)})
           """
           .update()
           .apply()
@@ -146,7 +146,7 @@ object UserGroup {
            SELECT
             user_group_id, user_group_leader, user_group_name, user_group_parent_id
            FROM user_group
-           WHERE user_group_id = ${id}
+           WHERE user_group_id = $id
          """
         .map(rs => fromResultSet(rs))
         .single()

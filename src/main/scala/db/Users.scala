@@ -7,7 +7,7 @@ object Users {
 
   def getUserId(userName: String) = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
-      sql"""SELECT user_id FROM "user" WHERE user_name = ${userName}"""
+      sql"""SELECT user_id FROM "user" WHERE user_name = $userName"""
         .map(x => x.bigInt("user_id"))
         .single()
         .apply()
@@ -16,7 +16,7 @@ object Users {
 
   def getPassword(userName: String) = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
-      sql"""SELECT user_password FROM "user" WHERE user_name = ${userName}"""
+      sql"""SELECT user_password FROM "user" WHERE user_name = $userName"""
         .map(x => x.string("user_password"))
         .single()
         .apply()
@@ -34,7 +34,7 @@ object Users {
     db localTx { implicit session =>
       getUserId(userName) map { id =>
         val t = scala.math.BigInt(id)
-        sql"""INSERT INTO user_access VALUES(${uuid}, ${t})""".update().apply()
+        sql"""INSERT INTO user_access VALUES($uuid, $t)""".update().apply()
       } filter { result =>
          result > 0
       } map { _ =>
@@ -48,7 +48,7 @@ object Users {
     using(DB(ConnectionPool.borrow())) { db =>
       db localTx { implicit session =>
         sql"""INSERT INTO "user"(user_email, user_name, user_password, user_avalon_login)
-                           VALUES(${email}, ${username}, ${passwordHash}, ${avalonLogin})"""
+                           VALUES($email, $username, $passwordHash, $avalonLogin)"""
           .update()
           .apply()
       }
