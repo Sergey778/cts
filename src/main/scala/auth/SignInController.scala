@@ -2,12 +2,12 @@ package auth
 
 import java.util.Calendar
 
-import com.twitter.finagle.http.{Cookie, Request, Response, Status}
+import com.twitter.finagle.http._
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.request.FormParam
 import com.twitter.util.Duration
 import db.User
-import util.Paths
+import _root_.util.Paths
 
 case class SignInFormRequest (
                       @FormParam `user_name`: String,
@@ -27,9 +27,11 @@ class SignInController extends Controller {
   }
 
   filter[UserFilter].get(Paths.signOut) { request: Request =>
-    val response = Response(Status.TemporaryRedirect)
-    response.location = Paths.signOut
-    response.removeCookie("access_token")
+    val response = Response(Status(303))
+    val cookie = request.cookies("access_token")
+    cookie.maxAge = Duration.fromMilliseconds(-1)
+    response.location = Paths.signIn
+    response.cookies.add(cookie)
     response
   }
 
