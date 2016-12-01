@@ -19,7 +19,7 @@ class SignUpController extends Controller {
   }
 
   filter[GuestFilter].post(Paths.signUp) { request: SignUpRequest =>
-    if (User.findByName(request.`user_name`).nonEmpty) response.preconditionFailed("User already exists")
+    if (User.findByName(request.`user_name`).nonEmpty) response.badRequest("User already exists")
     else {
       User.create(request.`user_name`, request.`user_pass`, request.`user_email`) match {
         case Some(u) =>
