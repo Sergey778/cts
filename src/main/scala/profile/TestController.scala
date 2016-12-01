@@ -3,7 +3,7 @@ package profile
 import auth.UserFilter
 import com.twitter.finagle.http.Request
 import com.twitter.finatra.http.Controller
-import db.{QuestionGroup, Test}
+import db._
 import util.UserContext.RequestAdditions
 
 import scala.util.Random
@@ -147,40 +147,47 @@ class TestController extends Controller {
   filter[UserFilter].get("/profile/tests/:*") { request: Request =>
     val Array(testId, endPath, _*) = request.params("*").split("/")
     Test.fromId(BigInt(testId)).map { test =>
-      if (endPath == "taketry") formTest(test)
+      if (endPath == "taketry") formTest(test, request.user)
       else response.badRequest
     } getOrElse response.badRequest
   }
 
-  def formTest(test: Test) = {
-    val src =
-      html (
-        scalatags.Text.all.head (
-          tag("title")("Add question")
-        ),
-        body (
-          div (
-            h1("Test try")
+  def formTest(test: Test, user: User) = {
+    val questions = Random.shuffle(test.questions).distinct
+    val attempt = TestTry.create(test, user).flatMap(a => a.createAnswers(questions))
+    if (attempt.isEmpty) {
+      response.badRequest
+    } else {
+      val src =
+        html(
+          scalatags.Text.all.head(
+            tag("title")("Add question")
           ),
-          form(method := "POST") (
-            Random.shuffle(test.questions).distinct.map { question =>
-              div(
+          body(
+            div(
+              h1("Test try")
+            ),
+            form(method := "POST", action := s"/testtry&id=${attempt.get.id}")(
+              questions.map { question =>
                 div(
-                  input(
-                    `type` := "text",
-                    placeholder := question.text,
-                    name := s"question-${question.id.toString}",
-                    id := s"question-${question.id.toString}"
+                  div(
+                    input(
+                      `type` := "text",
+                      placeholder := question.text,
+                      name := s"question-${question.id.toString}",
+                      id := s"question-${question.id.toString}"
+                    )
                   )
                 )
+              },
+              div(
+                input(`type` := "submit", value := "Check It!")
               )
-            },
-            div (
-              input(`type` := "submit", value := "Check It!")
             )
           )
-          )
         ).render
-    response.ok.html(src)
+
+      response.ok.html(src)
+    }
   }
 }
