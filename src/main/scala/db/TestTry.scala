@@ -32,9 +32,20 @@ case class TestTry(id: String, test: Test, user: User, startedTime: LocalDateTim
     if (result > 0) Some(this) else None
   }
 
+
+  def setAnswersChecked(answers: Map[Question, Boolean]): Option[Map[Question, Boolean]] =
+    DB localTx { implicit session =>
+    val result = answers map { case (question, isCorrect) =>
+      sql"UPDATE test_try_answers SET is_correct = ${if (isCorrect) 1 else 0} WHERE test_try_id = $id AND question_id = ${question.id}"
+          .update()
+          .apply()
+    }
+    if (result.sum == answers.size) Some(answers) else None
+  }
+
   def createAnswers(questions: List[Question]): Option[TestTry] = DB localTx { implicit session =>
     val result = questions map { q =>
-      sql"INSERT INTO test_try_answers (test_try_id, question_id, answer) VALUES ($id, ${q.id}, NULL)"
+      sql"INSERT INTO test_try_answers (test_try_id, question_id) VALUES ($id, ${q.id})"
         .update()
         .apply()
     }

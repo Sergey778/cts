@@ -1,11 +1,14 @@
 package profile
 
 import auth.UserFilter
+import checker.SimpleChecker
 import com.twitter.finagle.http.{Request, Response, Status}
 import com.twitter.finagle.{Service, SimpleFilter}
 import com.twitter.finatra.http.Controller
 import com.twitter.util.Future
 import db.{Question, TestTry}
+
+import scalatags.Text.all._
 
 object TestTryContext {
   private val testTryField = Request.Schema.newField[TestTry]
@@ -42,16 +45,47 @@ class TestTryFilter extends SimpleFilter[Request, Response] {
 
 class TestTryController extends Controller {
   import TestTryContext.RequestAdditions
+
+  private var attemptsChecks = scala.collection.immutable.HashMap[TestTry, Map[Question, Boolean]]()
+
   filter[UserFilter].filter[TestTryFilter].post("/testtry&id=:id") { request: Request =>
     request.userAnswers.foreach {
       case (question, Some(answer)) => request.testTry.updateAnswer(question, answer)
       case _ => ()
     }
-    //Checker.startCheck(request.testTry)
+    SimpleChecker
+      .check(request.testTry)
+      .map(answers => request.testTry.setAnswersChecked(answers))
+      .onSuccess {
+        answers => attemptsChecks = attemptsChecks + (request.testTry -> answers.getOrElse(Map()))
+      }
     response.ok.html("Your answers are gonna be checked in 10 minutes. Take cup of coffee and come back for results")
   }
 
   filter[UserFilter].filter[TestTryFilter].get("/testtry&id=:id") { request: Request =>
-    response.ok.html("no results yet...")
+    attemptsChecks.get(request.testTry) map { attempt =>
+      val src = html(
+        scalatags.Text.all.head(
+          tag("title")("Test attempt")
+        ),
+        body(
+          h1("Results:"),
+          div (
+            request.testTry.answers.map { case (question, answer) =>
+              div(
+                p(question.text),
+                div(
+                  p(s"Your answer: ${answer.getOrElse("-")}")
+                ),
+                div(
+                  p(s"Correct: ${attempt.getOrElse(question, "False")}")
+                )
+              )
+            }.toList
+          )
+        )
+      ).render
+      response.ok.html(src)
+    } getOrElse response.ok.html("no results yet...")
   }
 }
