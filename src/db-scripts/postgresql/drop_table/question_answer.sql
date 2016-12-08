@@ -1,2 +1,2 @@
 
-DROP TABLE question_answer;
+DROP TABLE question_answer CASCADE;

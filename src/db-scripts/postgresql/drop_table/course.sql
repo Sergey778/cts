@@ -1,3 +1,3 @@
 
-DROP TABLE course;
-DROP SEQUENCE course_seq;
+DROP TABLE course CASCADE;
+DROP SEQUENCE course_seq CASCADE;

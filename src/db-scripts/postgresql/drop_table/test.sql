@@ -1,3 +1,3 @@
 
-DROP TABLE test;
-DROP SEQUENCE test_seq;
+DROP TABLE test CASCADE;
+DROP SEQUENCE test_seq CASCADE;

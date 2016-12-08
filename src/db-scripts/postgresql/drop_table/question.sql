@@ -1,3 +1,3 @@
 
-DROP TABLE question;
-DROP SEQUENCE question_seq;
+DROP TABLE question CASCADE;
+DROP SEQUENCE question_seq CASCADE;

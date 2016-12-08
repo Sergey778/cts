@@ -1,2 +1,2 @@
 
-DROP TABLE words;
+DROP TABLE words CASCADE;

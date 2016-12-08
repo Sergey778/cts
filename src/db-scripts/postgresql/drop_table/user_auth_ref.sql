@@ -1,2 +1,2 @@
 
-DROP TABLE user_auth_ref;
+DROP TABLE user_auth_ref CASCADE;

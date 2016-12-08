@@ -1,2 +1,2 @@
 
-DROP TABLE test_try_answers;
+DROP TABLE test_try_answers CASCADE;

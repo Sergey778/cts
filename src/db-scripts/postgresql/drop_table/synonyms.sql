@@ -1,2 +1,2 @@
 
-DROP TABLE synonyms;
+DROP TABLE synonyms CASCADE;

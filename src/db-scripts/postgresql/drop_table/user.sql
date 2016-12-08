@@ -1,3 +1,3 @@
 
-DROP TABLE "user";
-DROP SEQUENCE user_seq;
+DROP TABLE "user" CASCADE;
+DROP SEQUENCE user_seq CASCADE;

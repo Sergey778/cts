@@ -1,3 +1,3 @@
 
-DROP TABLE user_group;
-DROP SEQUENCE user_group_seq;
+DROP TABLE user_group CASCADE;
+DROP SEQUENCE user_group_seq CASCADE;
