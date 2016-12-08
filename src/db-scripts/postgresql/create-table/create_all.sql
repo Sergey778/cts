@@ -25,4 +25,4 @@
 \i test_try_answers.sql
 \i course_tests.sql
 \i words.sql
-\i synonyms.sql
+\i word_synonyms.sql
