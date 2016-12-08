@@ -10,7 +10,7 @@ CREATE TABLE question (
   question_modifier_id    BIGINT        NOT NULL,
   question_create_time    TIMESTAMP     NOT NULL DEFAULT now(),
   question_modify_time    TIMESTAMP     NOT NULL DEFAULT now(),
-  question_text           VARCHAR(1024) NOT NULL,
+  question_text           TEXT          NOT NULL,
   question_group_id       BIGINT        NOT NULL,
 
   CONSTRAINT question_pk PRIMARY KEY (question_id),

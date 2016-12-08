@@ -44,7 +44,7 @@ case class User(id: BigInt,
 
   def confirm = using(DB(ConnectionPool.borrow())) { db =>
     db localTx { implicit session =>
-      val result = sql"""UPDATE "user" SET user_confirmed = TRUE WHERE user_id = $id"""
+      val result = sql"""UPDATE "user" SET user_confirmed = 1 WHERE user_id = $id"""
         .update()
         .apply()
       if (result > 0) Some(User(id, name, password, email, signupTime, confirmed = true))
@@ -107,7 +107,7 @@ object User {
     rs.string("user_password"),
     rs.string("user_email"),
     rs.timestamp("user_signup_time"),
-    rs.boolean("user_confirmed")
+    rs.int("user_confirmed") == 1
   )
 
   protected def find[A](columnName: String, value: A) = using(DB(ConnectionPool.borrow())) { db =>

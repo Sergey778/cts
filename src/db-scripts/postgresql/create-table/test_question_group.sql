@@ -9,7 +9,7 @@ CREATE TABLE test_question_group (
   CONSTRAINT test_question_group_pk PRIMARY KEY (test_id, question_group_id),
   CONSTRAINT test_question_group_test_fk FOREIGN KEY (test_id)
     REFERENCES test (test_id),
-  CONSTRAINT test_question_group_question_group_fk FOREIGN KEY (question_group_id)
+  CONSTRAINT question_group_fk FOREIGN KEY (question_group_id)
     REFERENCES question_group (question_group_id),
   CONSTRAINT question_count_check CHECK (question_count > 0)
 );

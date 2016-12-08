@@ -1,7 +1,7 @@
 package profile
 
 import auth.UserFilter
-import checker.SimpleChecker
+import checker.TomitaChecker
 import com.twitter.finagle.http.{Request, Response, Status}
 import com.twitter.finagle.{Service, SimpleFilter}
 import com.twitter.finatra.http.Controller
@@ -53,7 +53,7 @@ class TestTryController extends Controller {
       case (question, Some(answer)) => request.testTry.updateAnswer(question, answer)
       case _ => ()
     }
-    SimpleChecker
+    TomitaChecker
       .check(request.testTry)
       .map(answers => request.testTry.setAnswersChecked(answers))
       .onSuccess {

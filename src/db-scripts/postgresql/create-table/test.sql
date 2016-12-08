@@ -6,7 +6,7 @@ CREATE SEQUENCE test_seq START WITH 1;
 
 CREATE TABLE test (
   test_id           BIGINT          NOT NULL DEFAULT nextval('test_seq'),
-  test_name         VARCHAR(128)    NOT NULL,
+  test_name         TEXT            NOT NULL,
   test_creator_id   BIGINT          NOT NULL,
 
   CONSTRAINT test_pk PRIMARY KEY (test_id),
