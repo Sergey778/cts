@@ -21,7 +21,7 @@ class CourseController extends Controller {
         div(
           h1("Created courses:")
         ),
-        Course.createdByUser(request.user).map { course =>
+        Course.withCreator(request.user).map { course =>
           div(a(href := Paths.courses.element(course.id.toString))(course.name))
         },
         div (
@@ -73,7 +73,7 @@ class CourseController extends Controller {
   }
 
   filter[UserFilter].get(Paths.courses.wildcard("id")) { request: Request =>
-    val courseRef = request.params.get("id").flatMap(id => Course.fromId(BigInt(id))).flatten
+    val courseRef = request.params.get("id").flatMap(id => Course.withId(BigInt(id)))
     def htmlCode(course: Course) = html (
       scalatags.Text.tags.head (
         tag("title")("User Groups")
@@ -131,7 +131,7 @@ class CourseController extends Controller {
   }
 
   filter[UserFilter].post(Paths.coursesAddUserGroup.wildcard("id")) { request: Request =>
-    val course = request.params.get("id").flatMap(x => Course.fromId(BigInt(x))).flatten
+    val course = request.params.get("id").flatMap(x => Course.withId(BigInt(x)))
     val group = request.params.get("selectedGroup").flatMap(x => UserGroup.findById(BigInt(x)))
     val result = (course, group) match {
       case (Some(c), Some(g)) => c.addUserGroup(g)
@@ -162,7 +162,7 @@ class CourseController extends Controller {
   }
 
   filter[UserFilter].post(Paths.coursesAddTest.wildcard("id")) { request: Request =>
-    val course = request.params.get("id").flatMap(x => Course.fromId(BigInt(x))).flatten
+    val course = request.params.get("id").flatMap(x => Course.withId(BigInt(x)))
     val test = request.params.get("selectedTest").flatMap(x => Test.fromId(BigInt(x)))
     val result = (course, test) match {
       case (Some(c), Some(t)) => c.addTest(t)

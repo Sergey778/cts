@@ -1,10 +1,11 @@
 package db
 
+import db.core.{IdHolder, Table, TableObject}
 import scalikejdbc._
 
 
-case class Course(id: BigInt, name: String, description: String, creator: User) {
-  def userGroups = using(DB(ConnectionPool.borrow())) { db =>
+case class Course(id: BigInt, name: String, description: String, creator: User) extends Table {
+  def userGroups: List[UserGroup] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""
            SELECT
@@ -21,7 +22,7 @@ case class Course(id: BigInt, name: String, description: String, creator: User) 
     }
   }
 
-  def tests = using(DB(ConnectionPool.borrow())) { db =>
+  def tests: List[Test] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""
            SELECT
@@ -37,7 +38,7 @@ case class Course(id: BigInt, name: String, description: String, creator: User) 
     }
   }
 
-  def addUserGroup(group: UserGroup) = using(DB(ConnectionPool.borrow())) { db =>
+  def addUserGroup(group: UserGroup): Option[Course] = using(DB(ConnectionPool.borrow())) { db =>
     val result = db localTx { implicit session =>
       sql"""
            INSERT INTO course_groups (course_id, group_id)
@@ -49,7 +50,7 @@ case class Course(id: BigInt, name: String, description: String, creator: User) 
     if (result > 0) Some(this) else None
   }
 
-  def addTest(test: Test) = using(DB(ConnectionPool.borrow())) { db =>
+  def addTest(test: Test): Option[Course] = using(DB(ConnectionPool.borrow())) { db =>
     val result = db localTx { implicit session =>
       sql"""
            INSERT INTO course_tests (course_id, test_id)
@@ -62,18 +63,23 @@ case class Course(id: BigInt, name: String, description: String, creator: User) 
   }
 }
 
-object Course {
+object Course extends TableObject[Course] with IdHolder {
 
-  protected def generateId = using(DB(ConnectionPool.borrow())) { db =>
-    db localTx { implicit session =>
-      sql"""SELECT nextval('course_seq')"""
-        .map(rs => BigInt(rs.bigInt(1)))
-        .single()
-        .apply()
-    }
-  }
+  override def name: String = "course"
 
-  def create(name: String, description: String, creator: User): Option[Course] = generateId flatMap { id =>
+  private final val $id = "id"
+  private final val $name = "name"
+  private final val $description = "description"
+  private final val $creator = "creator"
+
+  override def columns: Map[String, String] = Map(
+    $id -> "course_id",
+    $name -> "course_name",
+    $description -> "course_description",
+    $creator -> "course_creator_id"
+  )
+
+  def create(name: String, description: String, creator: User): Option[Course] = nextId flatMap { id =>
     using(DB(ConnectionPool.borrow())) { db =>
       val result = db localTx { implicit session =>
         sql"""
@@ -87,31 +93,14 @@ object Course {
     }
   }
 
-  def fromResultSet(rs: WrappedResultSet) = User.findById(rs.bigInt("course_creator_id")) map { creator =>
-    Course(rs.bigInt("course_id"), rs.string("course_name"), rs.string("course_description"), creator)
-  }
+  override def fromResultSet(rs: WrappedResultSet) = Course(
+    id = rs.bigInt(columns($id)),
+    name = rs.string(columns($name)),
+    description = rs.string(columns($description)),
+    creator = User.findById(rs.bigInt(columns($creator))).get
+  )
 
-  def all = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"SELECT course_id, course_name, course_description, course_creator_id FROM course"
-        .map(rs => fromResultSet(rs))
-        .list()
-        .apply()
-    }
-  }
-
-  def fromId(id: BigInt) = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"""
-           SELECT course_id, course_name, course_description, course_creator_id
-           FROM course
-           WHERE course_id = $id
-         """
-        .map(rs => fromResultSet(rs))
-        .single()
-        .apply()
-    }
-  }
+  def withId(id: BigInt): Option[Course] = whereOption($id -> id)
 
   def availableForUser(user: User): List[Course] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
@@ -129,21 +118,8 @@ object Course {
         .map(rs => fromResultSet(rs))
         .list()
         .apply()
-        .flatten
     }
   }
 
-  def createdByUser(user: User): List[Course] = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"""
-           SELECT course_id, course_name, course_description, course_creator_id
-           FROM course
-           WHERE course_creator_id = ${user.id}
-         """
-        .map(x => fromResultSet(x))
-        .list()
-        .apply()
-        .flatten
-    }
-  }
+  def withCreator(user: User): List[Course] = whereList($creator -> user.id)
 }
