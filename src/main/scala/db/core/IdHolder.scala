@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scalikejdbc._
 
-trait IdHolder[Key, A <: TableObject[A]] { self: TableObject[A] =>
+trait IdHolder { self: TableObject[_] =>
 
   private final val emptyId: Long = -1
 
