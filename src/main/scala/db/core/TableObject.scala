@@ -5,7 +5,7 @@ import scalikejdbc._
 trait TableObject[A <: Table] {
   def name: String
 
-  protected val sqlName: SQLSyntax = sqls"$name"
+  protected val sqlName: SQLSyntax = SQLSyntax.createUnsafely(name)
 
   def columns: Map[String, String]
 
@@ -13,7 +13,7 @@ trait TableObject[A <: Table] {
 
   def fromResultSet(rs: WrappedResultSet): A
 
-  protected val sqlAll: SQLSyntax = sqls"${columnNames.mkString(", ")}"
+  protected val sqlAll: SQLSyntax = SQLSyntax.createUnsafely(columnNames.mkString(", "))
 
   protected val sqlInsert: SQLSyntax = sqls"INSERT INTO $sqlName ($sqlAll)"
 
@@ -41,7 +41,7 @@ trait TableObject[A <: Table] {
   }
 
   def whereList[ValueType](columnName: String, value: ValueType): List[A] = DB readOnly { implicit session =>
-    val columnSQL = sqls"${columns(columnName)}"
+    val columnSQL = SQLSyntax.createUnsafely(columns(columnName))
     sql"SELECT $sqlAll FROM $sqlName WHERE $columnSQL = $value"
       .map(rs => fromResultSet(rs))
       .list()
