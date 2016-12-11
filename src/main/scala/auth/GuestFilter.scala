@@ -3,6 +3,7 @@ package auth
 import com.twitter.finagle.http.{Request, Response, Status}
 import com.twitter.finagle.{Service, SimpleFilter}
 import com.twitter.util.Future
+import db.UserAuthToken
 import util.Paths
 
 /**
@@ -10,7 +11,8 @@ import util.Paths
   */
 class GuestFilter extends SimpleFilter[Request, Response]{
   override def apply(request: Request, service: Service[Request, Response]): Future[Response] = {
-    if (request.cookies.get("access_token").nonEmpty) redirectResponse
+    val token = request.cookies.get("access_token").map(c => c.value).getOrElse("")
+    if (UserAuthToken.forToken(token).nonEmpty) redirectResponse
     else service(request)
   }
 
