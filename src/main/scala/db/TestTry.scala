@@ -14,7 +14,7 @@ case class TestTry(id: String, test: Test, user: User, startedTime: LocalDateTim
          FROM test_try_answers
          WHERE test_try_id = $id
        """
-      .map(rs => Question.findById(rs.bigInt("question_id")) -> rs.stringOpt("answer"))
+      .map(rs => Question.withId(rs.bigInt("question_id")) -> rs.stringOpt("answer"))
       .list()
       .apply()
   } filter {

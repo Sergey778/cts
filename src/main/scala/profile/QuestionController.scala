@@ -42,14 +42,14 @@ class QuestionController extends Controller {
   filter[UserFilter].get(Paths.profileQuestions) { request: Request =>
     QuestionListTemplate(
       Question
-        .findByCreator(request.user)
+        .withCreator(request.user)
         .map(x => QuestionListElement(x.id.toString, x.text))
     )
   }
 
   filter[UserFilter].get(Paths.profileQuestions.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { id =>
-      Question.findById(BigInt(id))
+      Question.withId(BigInt(id))
     } map { question =>
       QuestionTemplate(question)
     }
@@ -79,7 +79,7 @@ class QuestionController extends Controller {
 
   filter[UserFilter].get(Paths.profileAnswersAdd.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { id =>
-      Question.findById(BigInt(id))
+      Question.withId(BigInt(id))
     } map { question =>
       AddAnswerTemplate(question)
     } getOrElse response.badRequest
@@ -87,7 +87,7 @@ class QuestionController extends Controller {
 
   filter[UserFilter].post(Paths.profileAnswersAdd.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { id =>
-      Question.findById(BigInt(id))
+      Question.withId(BigInt(id))
     } map { question =>
       QuestionAnswer.create(question, request.user, request.params.getOrElse("answer", ""))
     } map { answer =>

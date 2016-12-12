@@ -9,7 +9,7 @@ case class Test(id: BigInt, name: String, creator: User) {
   def concreteQuestions: List[Question] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"SELECT question_id, test_id FROM test_question"
-        .map(x => Question.findById(x.bigInt("question_id")))
+        .map(x => Question.withId(x.bigInt("question_id")))
         .list()
         .apply()
     }

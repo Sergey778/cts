@@ -65,7 +65,7 @@ object QuestionAnswer {
 
   def fromResultSet(x: WrappedResultSet) = QuestionAnswer(
     id = x.bigInt("question_answer_id"),
-    question = Question.findById(x.bigInt("question_id")).get,
+    question = Question.withId(x.bigInt("question_id")).get,
     answer = x.string("question_answer_value"),
     creator = User.findById(x.bigInt("question_answer_creator_id")).get,
     xml = x.stringOpt("question_answer_tomita_xml")

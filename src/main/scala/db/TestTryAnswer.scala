@@ -62,7 +62,7 @@ object TestTryAnswer {
 
   def fromResultSet(rs: WrappedResultSet, testTry: TestTry) = TestTryAnswer(
     testTry = testTry,
-    question = Question.findById(rs.bigInt("question_id")).get,
+    question = Question.withId(rs.bigInt("question_id")).get,
     answer = rs.stringOpt("answer"),
     systemGrade = rs.intOpt("system_grade"),
     teacherGrade = rs.intOpt("teacher_grade")
