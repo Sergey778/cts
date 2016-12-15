@@ -27,7 +27,7 @@ trait IdHolder { self: TableObject[_] =>
       next.foreach(k => id.set(k))
       next
     } else {
-      Some(id.getAndIncrement())
+      Some(id.getAndIncrement() + 1)
     }
   }
 
