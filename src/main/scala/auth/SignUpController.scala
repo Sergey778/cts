@@ -23,7 +23,7 @@ class SignUpController extends Controller {
     else {
       User.create(request.`user_name`, request.`user_pass`, request.`user_email`) match {
         case Some(u) =>
-          u.createAuthReference(EmailConfirmation).sendEmail("http://localhost:8888/signupconfirm")
+          u.createAuthReference(EmailConfirmation).map(_.sendEmail("http://localhost:8888/signupconfirm"))
           response.ok
         case None => response.internalServerError
       }

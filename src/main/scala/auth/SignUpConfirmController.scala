@@ -13,7 +13,7 @@ case class SignUpConfirmRequest(
 
 class SignUpConfirmController extends Controller {
   get(Paths.signUpConfirmation) { request: SignUpConfirmRequest =>
-    UserAuthRef.forReference(request.token).map { ref =>
+    UserAuthRef.withReference(request.token).map { ref =>
       ref.user.confirm
       ref.remove
       response.ok("<body>Your account has been confirmed</body>").contentType(MediaType.Html)

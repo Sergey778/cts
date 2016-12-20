@@ -1,6 +1,5 @@
 package db
 
-import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import com.github.t3hnar.bcrypt._
@@ -21,27 +20,9 @@ case class User(id: BigInt,
 
   def createAccessToken = UserAuthToken.create(this)
 
-  def authReferences = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"""SELECT user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until
-            FROM user_auth_ref WHERE user_id = $id AND user_auth_ref_valid_until > now()"""
-        .map(x => UserAuthRef.resultSetToAuthRef(x, this))
-        .list
-        .apply()
-    }
-  }
+  def authReferences: List[UserAuthRef] = UserAuthRef.withUserAndValid(this)
 
-  def createAuthReference(refType: AuthRefType) = using(DB(ConnectionPool.borrow())) { db =>
-    val uuid = java.util.UUID.randomUUID().toString
-    val now = Timestamp.valueOf(LocalDateTime.now().plusDays(1))
-    db localTx { implicit session =>
-      sql"""INSERT INTO user_auth_ref(user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until)
-               VALUES ($id, $uuid, ${refType.toString}, $now)"""
-        .update()
-        .apply()
-    }
-    UserAuthRef(this, uuid, refType, now)
-  }
+  def createAuthReference(refType: AuthRefType): Option[UserAuthRef] = UserAuthRef.create(this, refType)
 
   def confirm = using(DB(ConnectionPool.borrow())) { db =>
     db localTx { implicit session =>

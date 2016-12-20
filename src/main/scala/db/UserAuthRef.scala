@@ -1,8 +1,10 @@
 package db
 
-import java.sql.Timestamp
+import java.time.LocalDateTime
+import java.util.UUID
 
 import com.twitter.util.Future
+import db.core.{Table, TableObject, TimeHolder}
 import scalikejdbc.{ConnectionPool, DB, WrappedResultSet, _}
 import util.Email
 
@@ -44,7 +46,7 @@ object AuthRefType {
 case object EmailConfirmation extends AuthRefType
 case object PasswordReset extends AuthRefType
 
-case class UserAuthRef(user: User, reference: String, refType: AuthRefType, validUntil: Timestamp) {
+case class UserAuthRef(user: User, reference: String, refType: AuthRefType, validUntil: LocalDateTime) extends Table {
   def sendEmail(refStart: String): Future[Unit] =
     Email.sendMessage(user.email, refType.subject, refType.body(s"$refStart?token=$reference"))
 
@@ -57,26 +59,54 @@ case class UserAuthRef(user: User, reference: String, refType: AuthRefType, vali
   }
 }
 
-object UserAuthRef {
-  def resultSetToAuthRef(rs: WrappedResultSet): UserAuthRef =
-    resultSetToAuthRef(rs, User.withId(rs.bigInt("user_id")).get)
+object UserAuthRef extends TableObject[UserAuthRef] with TimeHolder {
 
-  def resultSetToAuthRef(rs: WrappedResultSet, user: User): UserAuthRef = UserAuthRef(
-    user,
-    rs.string("user_auth_ref"),
-    AuthRefType(rs.string("user_auth_ref_type")),
-    rs.timestamp("user_auth_ref_valid_until")
+  override def name: String = "user_auth_ref"
+
+  private final val $user = "user"
+  private final val $reference = "reference"
+  private final val $refType = "refType"
+  private final val $validUntil = "validUntil"
+
+  override def columns: Map[String, String] = Map (
+    $user -> "user_id",
+    $reference -> "user_auth_ref",
+    $refType -> "user_auth_ref_type",
+    $validUntil -> "user_auth_ref_valid_until"
   )
 
-  def forReference(token: String) = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"""SELECT user_id, user_auth_ref, user_auth_ref_type, user_auth_ref_valid_until
-            FROM user_auth_ref
-            WHERE user_auth_ref = $token
-        """
-        .map(x => resultSetToAuthRef(x))
-        .single()
+  def fromResultSet(rs: WrappedResultSet,
+                    user: Option[User] = None,
+                    reference: Option[String] = None,
+                    refType: Option[AuthRefType] = None,
+                    validUntil: Option[LocalDateTime] = None) = UserAuthRef(
+    user = user.orElse(User.withId(rs.bigInt(columns($user)))).get,
+    reference = reference.getOrElse(rs.string(columns($reference))),
+    refType = refType.getOrElse(AuthRefType(rs.string(columns($refType)))),
+    validUntil = validUntil.getOrElse(rs.timestamp(columns($validUntil)).toLocalDateTime)
+  )
+
+  override def fromResultSet(rs: WrappedResultSet): UserAuthRef = fromResultSet(rs, None, None, None, None)
+
+  def withReference(token: String): Option[UserAuthRef] = whereOption($reference -> token)
+  def withUser(user: User): List[UserAuthRef] = whereList($user -> user.id)
+  def withUserAndValid(user: User): List[UserAuthRef] =
+    withUser(user)
+      .filter(p => p.validUntil.isAfter(LocalDateTime.now()))
+
+  def create(user: User, refType: AuthRefType): Option[UserAuthRef] = {
+    val uuid = UUID.randomUUID().toString
+    val validUntil = currentTime.plusDays(1)
+    val result = DB localTx { implicit session =>
+      insertSql(
+        $user -> user.id,
+        $reference -> uuid,
+        $refType -> refType.toString,
+        $validUntil -> validUntil
+      )
+        .update()
         .apply()
     }
+    if (result > 0) Some(UserAuthRef(user, uuid, refType, validUntil)) else None
   }
 }
