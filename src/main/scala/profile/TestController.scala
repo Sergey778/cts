@@ -12,7 +12,7 @@ import scalatags.Text.all._
 
 class TestController extends Controller {
   filter[UserFilter].get("/profile/tests") { request: Request =>
-    val tests = Test.fromCreator(request.user)
+    val tests = Test.withCreator(request.user)
     val src = html(
       scalatags.Text.all.head(
         tag("title")("CTS-Profile")
@@ -66,7 +66,7 @@ class TestController extends Controller {
 
   filter[UserFilter].get("/profile/tests/:id") { request: Request =>
     request.params.get("id").map { id =>
-      Test.fromId(BigInt(id))
+      Test.withId(BigInt(id))
     } map {
       case Some(test) =>
         val src = html (
@@ -90,7 +90,7 @@ class TestController extends Controller {
 
   filter[UserFilter].get("/profile/tests/addqgroup/:id") { request: Request =>
     request.params.get("id").map { id =>
-      Test.fromId(BigInt(id))
+      Test.withId(BigInt(id))
     } map {
       case Some(test) =>
         val groups = QuestionGroup.withCreator(request.user)
@@ -131,7 +131,7 @@ class TestController extends Controller {
   }.reverse
 
   filter[UserFilter].post("/profile/tests/addqgroup/:id") { request: Request =>
-    val testParam = request.params.get("id").flatMap(x => Test.fromId(BigInt(x)))
+    val testParam = request.params.get("id").flatMap(x => Test.withId(BigInt(x)))
     val groupParam = request.params.get("selectedName").flatMap(x => QuestionGroup.withId(BigInt(x)))
     val count = request.params.get("questionCount").map(x => x.toInt).getOrElse(-1)
     val result = (testParam, groupParam) match {
@@ -146,7 +146,7 @@ class TestController extends Controller {
 
   filter[UserFilter].get("/profile/tests/:*") { request: Request =>
     val Array(testId, endPath, _*) = request.params("*").split("/")
-    Test.fromId(BigInt(testId)).map { test =>
+    Test.withId(BigInt(testId)).map { test =>
       if (endPath == "taketry") formTest(test, request.user)
       else response.badRequest
     } getOrElse response.badRequest

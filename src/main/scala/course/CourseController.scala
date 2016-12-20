@@ -150,7 +150,7 @@ class CourseController extends Controller {
           form(method := "POST") (
             div (
               select(name := "selectedTest", id := "selectedTest", placeholder := "Choose Test") (
-                Test.fromCreator(request.user).map(test => option(value := s"${test.id}")(s"${test.name}"))
+                Test.withCreator(request.user).map(test => option(value := s"${test.id}")(s"${test.name}"))
               ),
               input(`type` := "submit", value := "Add Test")
             )
@@ -163,7 +163,7 @@ class CourseController extends Controller {
 
   filter[UserFilter].post(Paths.coursesAddTest.wildcard("id")) { request: Request =>
     val course = request.params.get("id").flatMap(x => Course.withId(BigInt(x)))
-    val test = request.params.get("selectedTest").flatMap(x => Test.fromId(BigInt(x)))
+    val test = request.params.get("selectedTest").flatMap(x => Test.withId(BigInt(x)))
     val result = (course, test) match {
       case (Some(c), Some(t)) => c.addTest(t)
       case _ => None
