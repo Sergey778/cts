@@ -97,7 +97,7 @@ object Course extends TableObject[Course] with IdHolder {
     id = rs.bigInt(columns($id)),
     name = rs.string(columns($name)),
     description = rs.string(columns($description)),
-    creator = User.findById(rs.bigInt(columns($creator))).get
+    creator = User.withId(rs.bigInt(columns($creator))).get
   )
 
   def withId(id: BigInt): Option[Course] = whereOption($id -> id)

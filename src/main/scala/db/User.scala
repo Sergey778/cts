@@ -4,14 +4,15 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import com.github.t3hnar.bcrypt._
+import db.core._
 import scalikejdbc._
 
 case class User(id: BigInt,
                 name: String,
                 password: String,
                 email: String,
-                signupTime: Timestamp,
-                confirmed: Boolean = false) {
+                signupTime: LocalDateTime,
+                confirmed: Boolean = false) extends Table {
 
   def isCorrectPassword(pass: String): Boolean = pass.isBcrypted(password)
   def isCorrectPassword(pass: Option[String]): Boolean = pass.exists(_.isBcrypted(password))
@@ -92,42 +93,60 @@ case class User(id: BigInt,
   }
 }
 
-object User {
-  def findById(id: BigInt) = find("user_id", id)
-  def findByName(name: String) = find("user_name", name)
-  def findByEmail(email: String) = find("user_email", email)
+object User extends TableObject[User] with IdHolder with TimeHolder {
 
-  def apply(name: String, password: String, email: String) = {
-    findByName(name) getOrElse create(name, password, email)
-  }
+  override def name: String = "\"user\""
 
-  def fromResultSet(rs: WrappedResultSet): User = User(
-    rs.bigInt("user_id"),
-    rs.string("user_name"),
-    rs.string("user_password"),
-    rs.string("user_email"),
-    rs.timestamp("user_signup_time"),
-    rs.int("user_confirmed") == 1
+  private final val $id = "id"
+  private final val $name = "name"
+  private final val $password = "password"
+  private final val $email = "email"
+  private final val $signupTime = "signupTime"
+  private final val $confirmed = "confirmed"
+
+  override def columns: Map[String, String] = Map (
+    $id -> "user_id",
+    $name -> "user_name",
+    $password -> "user_password",
+    $email -> "user_email",
+    $signupTime -> "user_signup_time",
+    $confirmed -> "user_confirmed"
   )
 
-  protected def find[A](columnName: String, value: A) = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      val statement = """
-          SELECT user_id, user_name, user_password, user_email, user_signup_time, user_confirmed
-          FROM "user"
-          WHERE """ + s"$columnName = ?"
-      session.single(statement, value)(fromResultSet)
-    }
-  }
+  def withId(id: BigInt): Option[User] = whereOption($id -> id)
+  def withName(name: String): Option[User] = whereOption($name -> name)
+  def withEmail(email: String): Option[User] = whereOption($email -> email)
 
-  def create(name: String, password: String, email: String) = {
-    val result = using(DB(ConnectionPool.borrow())) { db =>
-      db localTx { implicit session =>
-        sql""" INSERT INTO "user" (user_email, user_name, user_password)
-          VALUES($email, $name, ${password.bcrypt})
-        """.update().apply()
-      }
+  def fromResultSet(rs: WrappedResultSet,
+                    id: Option[BigInt] = None,
+                    name: Option[String] = None,
+                    password: Option[String] = None,
+                    email: Option[String] = None,
+                    signupTime: Option[LocalDateTime] = None,
+                    userConfirmed: Option[Boolean] = None) = User(
+    id = id.getOrElse(rs.bigInt(columns($id))),
+    name = name.getOrElse(rs.string(columns($name))),
+    password = password.getOrElse(rs.string(columns($password))),
+    email = email.getOrElse(rs.string(columns($email))),
+    signupTime = signupTime.getOrElse(rs.timestamp(columns($signupTime)).toLocalDateTime),
+    confirmed = userConfirmed.getOrElse(rs.int(columns($confirmed)) > 0)
+  )
+
+  override def fromResultSet(rs: WrappedResultSet): User = fromResultSet(rs, None, None, None, None, None, None)
+
+  def create(name: String, password: String, email: String): Option[User] = nextId flatMap { id =>
+    val time = currentTime
+    val crypted = password.bcrypt
+    val result = DB localTx { implicit session =>
+      insertSql(
+        $id -> BigInt(id),
+        $name -> name,
+        $password -> crypted,
+        $email -> email,
+        $signupTime -> time,
+        $confirmed -> 0
+      ).update().apply()
     }
-    if (result > 0) findByName(name) else None
+    if (result > 0) Some(User(BigInt(id), name, crypted, email, time)) else None
   }
 }

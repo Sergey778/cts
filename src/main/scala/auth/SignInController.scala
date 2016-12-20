@@ -2,12 +2,12 @@ package auth
 
 import java.util.Calendar
 
+import _root_.util.Paths
 import com.twitter.finagle.http._
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.request.FormParam
 import com.twitter.util.Duration
 import db.User
-import _root_.util.Paths
 
 case class SignInFormRequest (
                       @FormParam `user_name`: String,
@@ -20,7 +20,7 @@ class SignInController extends Controller {
   }
 
   filter[GuestFilter].post(Paths.signIn) { request: SignInFormRequest =>
-    User.findByName(request.`user_name`)
+    User.withName(request.`user_name`)
       .filter(_.isCorrectPassword(request.`user_password`))
       .flatMap(x => okWithToken(x))
       .getOrElse(response.unauthorized)

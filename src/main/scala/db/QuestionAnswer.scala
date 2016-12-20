@@ -59,7 +59,7 @@ object QuestionAnswer {
     id = x.bigInt("question_answer_id"),
     question = question,
     answer = x.string("question_answer_value"),
-    creator = User.findById(x.bigInt("question_answer_creator_id")).get,
+    creator = User.withId(x.bigInt("question_answer_creator_id")).get,
     xml = x.stringOpt("question_answer_tomita_xml")
   )
 
@@ -67,7 +67,7 @@ object QuestionAnswer {
     id = x.bigInt("question_answer_id"),
     question = Question.withId(x.bigInt("question_id")).get,
     answer = x.string("question_answer_value"),
-    creator = User.findById(x.bigInt("question_answer_creator_id")).get,
+    creator = User.withId(x.bigInt("question_answer_creator_id")).get,
     xml = x.stringOpt("question_answer_tomita_xml")
   )
 }

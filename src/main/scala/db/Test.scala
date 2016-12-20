@@ -91,7 +91,7 @@ object Test extends TableObject[Test] with IdHolder {
                     creator: Option[User] = None): Test = Test(
     id = id.getOrElse(rs.bigInt(columns($id))),
     name = name.getOrElse(rs.string(columns($name))),
-    creator = creator.orElse(User.findById(rs.bigInt(columns($creator)))).get
+    creator = creator.orElse(User.withId(rs.bigInt(columns($creator)))).get
   )
 
   override def fromResultSet(rs: WrappedResultSet): Test = fromResultSet(rs, None, None, None)

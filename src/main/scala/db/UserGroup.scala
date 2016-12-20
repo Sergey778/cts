@@ -48,7 +48,7 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
       sql"""
            SELECT user_id FROM user_groups WHERE user_group_id = $id
          """
-        .map(rs => User.findById(rs.bigInt("user_id")))
+        .map(rs => User.withId(rs.bigInt("user_id")))
         .list()
         .apply()
         .flatten
@@ -60,7 +60,7 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
       sql"""
            SELECT user_id FROM user_groups WHERE user_group_id = $id AND full_member = 1
          """
-        .map(rs => User.findById(rs.bigInt("user_id")))
+        .map(rs => User.withId(rs.bigInt("user_id")))
         .list()
         .apply()
         .flatten
@@ -103,7 +103,7 @@ object UserGroup {
   def fromResultSet(rs: WrappedResultSet): UserGroup = UserGroup(
     id = rs.bigInt("user_group_id"),
     name = rs.string("user_group_name"),
-    leader = User.findById(rs.bigInt("user_group_leader")).get,
+    leader = User.withId(rs.bigInt("user_group_leader")).get,
     parentGroup = rs.bigIntOpt("user_group_parent_id").flatMap(x => findById(BigInt(x)))
   )
 

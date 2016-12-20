@@ -66,7 +66,7 @@ object QuestionGroup extends TableObject[QuestionGroup] with IdHolder {
                     parentGroup: Option[Option[QuestionGroup]] = None): QuestionGroup = QuestionGroup(
     id = id.getOrElse(rs.bigInt(columns($id))),
     name = name.getOrElse(rs.string(columns($name))),
-    creator = creator.orElse(User.findById(rs.bigInt(columns($creator)))).get,
+    creator = creator.orElse(User.withId(rs.bigInt(columns($creator)))).get,
     parentGroupEval = () => parentGroup.getOrElse(QuestionGroup.withId(rs.bigInt(columns($parentGroup))))
   )
 

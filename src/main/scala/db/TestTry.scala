@@ -71,7 +71,7 @@ object TestTry {
   def fromResultSet(rs: WrappedResultSet): TestTry = TestTry(
     id = rs.string("test_try_id"),
     test = Test.withId(rs.bigInt("test_id")).get,
-    user = User.findById(rs.bigInt("user_id")).get,
+    user = User.withId(rs.bigInt("user_id")).get,
     startedTime = rs.timestamp("test_try_start").toLocalDateTime
   )
 

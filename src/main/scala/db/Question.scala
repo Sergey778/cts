@@ -46,8 +46,8 @@ object Question extends TableObject[Question] with IdHolder with TimeHolder {
                     modifier: Option[User] = None,
                     group: Option[QuestionGroup] = None): Question = Question(
     id = rs.bigInt("question_id"),
-    creator = creator.orElse(User.findById(rs.bigInt("question_creator_id"))).get,
-    modifier = modifier.orElse(User.findById(rs.bigInt("question_modifier_id"))).get,
+    creator = creator.orElse(User.withId(rs.bigInt("question_creator_id"))).get,
+    modifier = modifier.orElse(User.withId(rs.bigInt("question_modifier_id"))).get,
     createTime = rs.timestamp("question_create_time").toLocalDateTime,
     modifyTime = rs.timestamp("question_modify_time").toLocalDateTime,
     text = rs.string("question_text"),

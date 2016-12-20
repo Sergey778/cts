@@ -98,7 +98,7 @@ class UserGroupController extends Controller {
     } flatMap { group =>
       val user =
         if (request.user == group.leader)
-          request.params.get("userId").flatMap(x => User.findById(BigInt(x)))
+          request.params.get("userId").flatMap(x => User.withId(BigInt(x)))
         else
           Some(request.user)
       user.map(user => group.makeFullMember(user)).filter(p => p).map(x => response.ok.html("You are in group!"))
@@ -162,7 +162,7 @@ class UserGroupController extends Controller {
       group.leader == request.user
     } flatMap { group =>
       request.params.get("userName")
-        .flatMap(x => User.findByName(x) orElse User.findByEmail(x))
+        .flatMap(x => User.withName(x) orElse User.withEmail(x))
         .map(x => (x, group.addMember(x)))
     } flatMap { case (user, group) =>
       group.map { g =>
