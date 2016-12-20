@@ -51,12 +51,19 @@ object Question extends TableObject[Question] with IdHolder with TimeHolder {
     createTime = rs.timestamp("question_create_time").toLocalDateTime,
     modifyTime = rs.timestamp("question_modify_time").toLocalDateTime,
     text = rs.string("question_text"),
-    group = group.orElse(QuestionGroup.findById(rs.bigInt("question_group_id"))).get
+    group = group.orElse(QuestionGroup.withId(rs.bigInt("question_group_id"))).get
   )
 
   def withCreator(creator: User): List[Question] = DB readOnly { implicit session =>
     whereSql($creator -> creator.id)
       .map(x => fromResultSet(x, creator = Some(creator)))
+      .list()
+      .apply()
+  }
+
+  def withQuestionGroup(q: QuestionGroup): List[Question] = DB readOnly { implicit session =>
+    whereSql($group -> q.id)
+      .map(rs => fromResultSet(rs, group = Some(q)))
       .list()
       .apply()
   }

@@ -8,7 +8,7 @@ import db.QuestionGroup
 import util.Paths
 import util.Paths.PathExtension
 import util.UserContext.RequestAdditions
-import util.templates.{HierarchyList, HierarchyListElement, HierarchySelect, HierarchySelectElement}
+import util.templates._
 
 @Mustache("profile_question_groups_list")
 case class GroupsList(override val list: List[HierarchyListElement]) extends HierarchyList
@@ -40,11 +40,11 @@ class QuestionGroupController extends Controller {
   }
 
   filter[UserFilter].get(Paths.profileQuestionGroups) { request: Request =>
-    GroupsList(questionGroupToQGroup(QuestionGroup.findByUser(request.user)))
+    GroupsList(questionGroupToQGroup(QuestionGroup.withCreator(request.user)))
   }
 
   filter[UserFilter].get(Paths.profileQuestionGroupsCreate) { request: Request =>
-    CreateQuestionGroup(questionGroupToQGroup2(QuestionGroup.findByUser(request.user)))
+    CreateQuestionGroup(questionGroupToQGroup2(QuestionGroup.withCreator(request.user)))
   }
 
   filter[UserFilter].post(Paths.profileQuestionGroupsCreate) { request: Request =>
@@ -52,7 +52,7 @@ class QuestionGroupController extends Controller {
     val name = request.params.get("name")
     val parentId = request.params.get("id").map(x => BigInt(x))
     val t = (name, parentId) match {
-      case (Some(n), Some(id)) => QuestionGroup.create(n, creator, QuestionGroup.findById(id))
+      case (Some(n), Some(id)) => QuestionGroup.create(n, creator, QuestionGroup.withId(id))
       case _ => None
     }
     t map { questionGroup =>
@@ -62,7 +62,7 @@ class QuestionGroupController extends Controller {
 
   filter[UserFilter].get(Paths.profileQuestionGroups.element("id")) { request: Request =>
     request.params.get("id") flatMap { id =>
-      QuestionGroup.findById(BigInt(id))
+      QuestionGroup.withId(BigInt(id))
     } map { group =>
       GroupTemplate(group)
     }

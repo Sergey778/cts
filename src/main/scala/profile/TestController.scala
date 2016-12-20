@@ -93,7 +93,7 @@ class TestController extends Controller {
       Test.fromId(BigInt(id))
     } map {
       case Some(test) =>
-        val groups = QuestionGroup.findByUser(request.user)
+        val groups = QuestionGroup.withCreator(request.user)
         val src = html (
           scalatags.Text.all.head (
             tag("title")("Add question")
@@ -132,7 +132,7 @@ class TestController extends Controller {
 
   filter[UserFilter].post("/profile/tests/addqgroup/:id") { request: Request =>
     val testParam = request.params.get("id").flatMap(x => Test.fromId(BigInt(x)))
-    val groupParam = request.params.get("selectedName").flatMap(x => QuestionGroup.findById(BigInt(x)))
+    val groupParam = request.params.get("selectedName").flatMap(x => QuestionGroup.withId(BigInt(x)))
     val count = request.params.get("questionCount").map(x => x.toInt).getOrElse(-1)
     val result = (testParam, groupParam) match {
       case (Some(test), Some(group)) =>

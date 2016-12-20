@@ -1,28 +1,19 @@
 package db
 
+import db.core.{IdHolder, Table, TableObject}
 import scalikejdbc._
 
-case class QuestionGroup(id: BigInt, name: String, creator: User, parentGroup: Option[QuestionGroup]) {
-  def childs = QuestionGroup.findByParent(id)
+case class QuestionGroup(
+                          id: BigInt,
+                          name: String,
+                          creator: User,
+                          private val parentGroupEval: () => Option[QuestionGroup]) extends Table {
 
-  def questions = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"""
-           SELECT
-            question_id,
-            question_creator_id,
-            question_modifier_id,
-            question_create_time,
-            question_modify_time,
-            question_text
-           FROM question
-           WHERE question_group_id = $id
-         """
-        .map(x => Question.fromResultSet(x, group = Some(this)))
-        .list()
-        .apply()
-    }
-  }
+  lazy val parentGroup: Option[QuestionGroup] = parentGroupEval()
+
+  def childs: List[QuestionGroup] = QuestionGroup.withParent(id)
+
+  def questions: List[Question] = Question.withQuestionGroup(this)
 
   def questionsCount = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
@@ -34,49 +25,58 @@ case class QuestionGroup(id: BigInt, name: String, creator: User, parentGroup: O
   }
 }
 
-object QuestionGroup {
+object QuestionGroup extends TableObject[QuestionGroup] with IdHolder {
 
-  private def createId = using(DB(ConnectionPool.borrow())) { db =>
-    db localTx { implicit session =>
-      sql"SELECT nextval('question_group_seq')"
-        .map(rs => rs.bigInt(1))
-        .single()
-        .apply()
-    }
-  }
+  override def name: String = "question_group"
 
-  def create(name: String, creator: User, parentGroup: Option[QuestionGroup]): Option[QuestionGroup] = createId flatMap { id =>
+  private final val $id = "id"
+  private final val $name = "name"
+  private final val $creator = "creator"
+  private final val $parentGroup = "parentGroup"
+
+  override def columns: Map[String, String] = Map (
+    $id -> "question_group_id",
+    $name -> "question_group_name",
+    $creator -> "question_group_creator_id",
+    $parentGroup -> "question_group_parent_id"
+  )
+
+  def create(name: String, creator: User, parentGroup: Option[QuestionGroup]): Option[QuestionGroup] = nextId flatMap { id =>
     val result = using(DB(ConnectionPool.borrow())) { db =>
       db localTx { implicit session =>
-        sql"""
-             INSERT INTO question_group
-             (question_group_id, question_group_name, question_group_creator_id, question_group_parent_id)
-             VALUES
-             (${BigInt(id)}, $name, ${creator.id}, ${parentGroup.map(x => x.id)})
-           """
+        insertSql(
+          $id -> BigInt(id),
+          $name -> name,
+          $creator -> creator.id,
+          $parentGroup -> parentGroup.map(x => x.id)
+        )
         .update()
         .apply()
       }
     }
-    if (result > 0) Some(id) else None
-  } map { id =>
-    QuestionGroup(id, name, creator, parentGroup)
+    if (result > 0) Some(QuestionGroup(BigInt(id), name, creator, () => parentGroup)) else None
   }
-  // SHOULD BE REWRITTEN
-  def fromResultSet(rs: WrappedResultSet): QuestionGroup = QuestionGroup(
-    id = rs.bigInt("question_group_id"),
-    name = rs.string("question_group_name"),
-    creator = User.findById(rs.bigInt("question_group_creator_id")).get,
-    parentGroup = findById(rs.bigIntOpt("question_group_parent_id").map(x => BigInt(x)))
+
+  override def fromResultSet(rs: WrappedResultSet): QuestionGroup = fromResultSet(rs, None, None, None)
+
+  def fromResultSet(rs: WrappedResultSet,
+                    id: Option[BigInt] = None,
+                    creator: Option[User] = None,
+                    name: Option[String] = None,
+                    parentGroup: Option[Option[QuestionGroup]] = None): QuestionGroup = QuestionGroup(
+    id = id.getOrElse(rs.bigInt(columns($id))),
+    name = name.getOrElse(rs.string(columns($name))),
+    creator = creator.orElse(User.findById(rs.bigInt(columns($creator)))).get,
+    parentGroupEval = () => parentGroup.getOrElse(QuestionGroup.withId(rs.bigInt(columns($parentGroup))))
   )
 
-  def findByUser(user: User) = {
+  def withCreator(creator: User): List[QuestionGroup] = {
     using(DB(ConnectionPool.borrow())) { db =>
       db readOnly { implicit session =>
         sql"""
             SELECT question_group_id, question_group_name, question_group_creator_id, question_group_parent_id
             FROM question_group
-            WHERE question_group_creator_id = ${user.id} AND question_group_parent_id IS NULL
+            WHERE question_group_creator_id = ${creator.id} AND question_group_parent_id IS NULL
           """
           .map(rs => fromResultSet(rs))
           .list()
@@ -85,51 +85,13 @@ object QuestionGroup {
     }
   }
 
-  def findById(id: BigInt) = {
-    using(DB(ConnectionPool.borrow())) { db =>
-      db readOnly { implicit session =>
-        sql"""
-            SELECT
-            question_group_id, question_group_name, question_group_creator_id, question_group_parent_id
-            FROM question_group
-            WHERE question_group_id = $id
-          """
-          .map(rs => fromResultSet(rs))
-          .single()
-          .apply()
-      }
-    }
-  }
+  def withId(id: BigInt): Option[QuestionGroup] = whereOption($id -> id)
 
-  def findById(id: Option[BigInt]) = {
-    using(DB(ConnectionPool.borrow())) { db =>
-      db readOnly { implicit session =>
-        sql"""
-            SELECT
-            question_group_id, question_group_name, question_group_creator_id, question_group_parent_id
-            FROM question_group
-            WHERE question_group_id = $id
-          """
-          .map(rs => fromResultSet(rs))
-          .single()
-          .apply()
-      }
-    }
-  }
-
-  def findByParent(id: BigInt) = {
-    using(DB(ConnectionPool.borrow())) { db =>
-      db readOnly { implicit session =>
-        sql"""
-            SELECT
-            question_group_id, question_group_name, question_group_creator_id, question_group_parent_id
-            FROM question_group
-            WHERE question_group_parent_id = $id
-          """
-          .map(rs => fromResultSet(rs))
-          .list()
-          .apply()
-      }
-    }
+  def withParent(id: BigInt): List[QuestionGroup] = whereList($parentGroup -> id)
+  def withParent(parentGroup: QuestionGroup): List[QuestionGroup] = DB readOnly { implicit session =>
+    whereSql($parentGroup -> parentGroup.id)
+      .map(rs => fromResultSet(rs, parentGroup = Some(Some(parentGroup))))
+      .list()
+      .apply()
   }
 }

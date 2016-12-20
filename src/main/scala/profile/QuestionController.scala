@@ -62,12 +62,12 @@ class QuestionController extends Controller {
       else t.map(x => HierarchySelectElement(x.id.toString, x.name, questionGroupToQGroup2(x.childs, margin + 2), margin))
     }
 
-    CreateQuestionTemplate(questionGroupToQGroup2(QuestionGroup.findByUser(request.user)))
+    CreateQuestionTemplate(questionGroupToQGroup2(QuestionGroup.withCreator(request.user)))
   }
 
   filter[UserFilter].post(Paths.profileQuestionCreate) { request: Request =>
     val questionText = request.params.get("questionText")
-    val questionGroup = request.params.get("questionGroup").flatMap(x => QuestionGroup.findById(BigInt(x)))
+    val questionGroup = request.params.get("questionGroup").flatMap(x => QuestionGroup.withId(BigInt(x)))
     val question = (questionText, questionGroup) match {
       case (Some(text), Some(group)) => Question.create(request.user, text, group)
       case _ => None
