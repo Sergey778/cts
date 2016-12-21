@@ -16,7 +16,7 @@ case class User(id: BigInt,
   def isCorrectPassword(pass: String): Boolean = pass.isBcrypted(password)
   def isCorrectPassword(pass: Option[String]): Boolean = pass.exists(_.isBcrypted(password))
 
-  def accessTokens = UserAuthToken.forUser(this)
+  def accessTokens = UserAuthToken.withUser(this)
 
   def createAccessToken = UserAuthToken.create(this)
 

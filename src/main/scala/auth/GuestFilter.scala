@@ -12,7 +12,7 @@ import util.Paths
 class GuestFilter extends SimpleFilter[Request, Response]{
   override def apply(request: Request, service: Service[Request, Response]): Future[Response] = {
     val token = request.cookies.get("access_token").map(c => c.value).getOrElse("")
-    if (UserAuthToken.forToken(token).nonEmpty) redirectResponse
+    if (UserAuthToken.withToken(token).nonEmpty) redirectResponse
     else service(request)
   }
 

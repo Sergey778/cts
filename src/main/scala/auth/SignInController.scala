@@ -1,6 +1,6 @@
 package auth
 
-import java.util.Calendar
+import java.time.LocalDateTime
 
 import _root_.util.Paths
 import com.twitter.finagle.http._
@@ -37,7 +37,7 @@ class SignInController extends Controller {
 
   protected def okWithToken(user: User) = user.createAccessToken map { token =>
     val cookie = new Cookie("access_token", token.token)
-    cookie.maxAge = Duration.fromMilliseconds(token.validUntil.getTime - Calendar.getInstance().getTime.getTime)
+    cookie.maxAge = Duration.fromNanoseconds(java.time.Duration.between(LocalDateTime.now(), token.validUntil).toNanos)
     response.ok("It's ok").cookie(cookie)
   }
 }

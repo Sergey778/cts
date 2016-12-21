@@ -12,7 +12,7 @@ import util.{Paths, UserContext}
 class UserFilter extends SimpleFilter[Request, Response] {
   override def apply(request: Request, service: Service[Request, Response]): Future[Response] =
     request.cookies.get("access_token") flatMap { cookie =>
-      UserAuthToken.forToken(cookie.value)
+      UserAuthToken.withToken(cookie.value)
     } map { authToken =>
       service(UserContext.assignUser(request, authToken.user))
     } getOrElse relocationResponse

@@ -1,18 +1,29 @@
 package db
 
-import java.sql.Timestamp
+import java.time.LocalDateTime
 
+import db.core.{Table, TableObject, TimeHolder}
 import scalikejdbc._
 
 /**
   * Created by Sergey on 07.11.16.
   */
-case class UserAuthToken(user: User, token: String, validUntil: Timestamp) {
+case class UserAuthToken(user: User, token: String, validUntil: LocalDateTime) extends Table
 
-}
+object UserAuthToken extends TableObject[UserAuthToken] with TimeHolder {
+  override def name: String = "user_token"
 
-object UserAuthToken {
-  def forToken(token: String): Option[UserAuthToken] = using(DB(ConnectionPool.borrow())) { db =>
+  private final val $user = "user"
+  private final val $token = "token"
+  private final val $validUntil = "validUntil"
+
+  override def columns: Map[String, String] = Map (
+    $user -> "user_id",
+    $token -> "user_token_value",
+    $validUntil -> "user_token_valid_until"
+  )
+
+  def withToken(token: String): Option[UserAuthToken] = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
       sql"""
             SELECT
@@ -34,40 +45,31 @@ object UserAuthToken {
     }
   }
 
-  def forUser(user: User): List[UserAuthToken] = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"""
-            SELECT
-              ut.user_token_valid_until user_token_valid_until,
-              ut.user_token_value user_token_value
-            FROM user_token ut
-            JOIN "user" u ON ut.user_id = u.user_id
-            WHERE ut.user_id = ${user.id} AND ut.user_token_valid_until > now()
-         """
-        .map(x => fromResultSet(x, user))
-        .list()
-        .apply()
-    }
-  }
+  def withUser(user: User): List[UserAuthToken] =
+    whereList($user -> user.id)
+      .filter(p => p.validUntil.isAfter(LocalDateTime.now()))
 
-  private def fromResultSet(rs: WrappedResultSet, user: User) = UserAuthToken(
-    user = user,
-    token = rs.string("user_token_value"),
-    validUntil = rs.timestamp("user_token_valid_until")
+  def fromResultSet(rs: WrappedResultSet,
+                    user: Option[User] = None,
+                    token: Option[String] = None,
+                    validUntil: Option[LocalDateTime] = None): UserAuthToken = UserAuthToken(
+    user = user.orElse(User.withId(rs.bigInt(columns($user)))).get,
+    token = token.getOrElse(rs.string(columns($token))),
+    validUntil = validUntil.getOrElse(rs.timestamp(columns($validUntil)).toLocalDateTime)
   )
 
-  def fromResultSet(rs: WrappedResultSet): UserAuthToken =
-    fromResultSet(rs, User.fromResultSet(rs))
+  override def fromResultSet(rs: WrappedResultSet): UserAuthToken = fromResultSet(rs, None, None, None)
 
-  def create(user: User) = {
+  def create(user: User): Option[UserAuthToken] = {
     val token = java.util.UUID.randomUUID().toString
-    val result = using(DB(ConnectionPool.borrow())) { db =>
-      db localTx { implicit session =>
-        sql"INSERT INTO user_token(user_id, user_token_value) VALUES (${user.id}, $token)"
-          .update()
-          .apply()
-      }
+    val validUntil = currentTime.plusDays(21)
+    val result = DB localTx { implicit session =>
+      insertSql(
+        $user -> user.id,
+        $token -> token,
+        $validUntil -> validUntil
+      ).update().apply()
     }
-    if (result > 0) forToken(token) else None
+    if (result > 0) Some(UserAuthToken(user, token, validUntil)) else None
   }
 }
