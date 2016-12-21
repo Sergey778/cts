@@ -1,6 +1,7 @@
 package checker
 import java.io.FileWriter
 import java.nio.file.{Files, Path, StandardCopyOption}
+import java.time.LocalDateTime
 
 import com.twitter.util.Future
 import db.{Question, TestTry}
@@ -9,8 +10,8 @@ import util.FilePaths
 import util.FilePaths.PathExtension
 
 import scala.collection.JavaConversions._
-import scala.io.Source
 import scala.util.{Failure, Success, Try}
+import scala.xml.{NodeSeq, XML}
 
 
 object TomitaChecker extends Checker {
@@ -41,9 +42,37 @@ object TomitaChecker extends Checker {
 
   protected def readTomitaOutput(folder: Path): Future[Boolean] = futurePool {
     logger.info("Read output.xml")
-    val lines = Source.fromFile(folder.resolve("output.xml").toFile).getLines().toList
-    lines.foreach(x => logger.info(s"read this: $x"))
+    val xml: NodeSeq = XML.loadFile(folder.resolve("output.xml").toFile)
+    logger.info(xml)
+    val document = parseDocument(xml)
+    logger.info(document)
+    logger.info("objects:" + document.objects)
+    logger.info("subjects:" + document.subjects)
+    logger.info("relations:" + document.relations)
     true
+  }
+
+  protected def parseDocument(xml: NodeSeq): TomitaDocument = {
+    val root: NodeSeq = xml \ "document"
+    val facts = root \ "facts" \\ "_"
+    TomitaDocument(
+      (root \@ "di"),
+      (root \@ "bi"),
+      LocalDateTime.now(), // TODO: Change this
+      parseFacts(facts)
+    )
+  }
+
+  protected def parseFacts(xml: NodeSeq): Seq[TomitaFact] = xml map { x =>
+    x.label match {
+    case "ObjectTag" => ObjectFact(ObjectVal((x \ "Object" \@ "val")))
+    case "SubjectTag" => SubjectFact(SubjectVal(x \ "Subject" \@ "val"))
+    case "RelationTag" => RelationFact(RelationVal(x \ "Relation" \@ "val"))
+    case "NounTag" => NounTag(CanonicWordVal(x \ "CanonicWord" \@ "val"))
+    case "VerbTag" => VerbTag(CanonicWordVal(x \ "CanonicWord" \@ "val"))
+    case "AdjTag" => AdjTag(CanonicWordVal(x \ "CanonicWord" \@ "val"))
+    case _ => OtherTag(CanonicWordVal((x \ "CanonicWord" \@ "val")))
+    }
   }
 
   final private val args = List(FilePaths.tomitaExecutable, FilePaths.tomitaConfig)
