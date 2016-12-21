@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path, StandardCopyOption}
 import java.time.LocalDateTime
 
 import com.twitter.util.Future
-import db.{Question, TestTry}
+import db.{Question, QuestionAnswer, TestTry}
 import grizzled.slf4j.Logger
 import util.FilePaths
 import util.FilePaths.PathExtension
@@ -23,7 +23,11 @@ object TomitaChecker extends Checker {
       case (question, Some(answer)) =>
         runTomita(answer) flatMap {
           case Success((folder, process)) if process.waitFor() == 0 =>
-            readTomitaOutput(folder)
+            getTomitaOutput(folder).flatMap { xmlAnswer =>
+              val checkResult = check(QuestionAnswer.fromQuestion(question), xmlAnswer)
+              checkResult.foreach(x => logger.info(s"result => $x"))
+              checkResult.map(_ > 50)
+            }
           case Success((_, process)) =>
             logger.error(s"Process finished with ${process.exitValue()}")
             Future.exception(new TomitaException("Tomita failure"))
@@ -77,7 +81,7 @@ object TomitaChecker extends Checker {
 
   final private val args = List(FilePaths.tomitaExecutable, FilePaths.tomitaConfig)
 
-  protected def runTomita(input: String): Future[Try[(Path, Process)]] = futurePool {
+  def runTomita(input: String): Future[Try[(Path, Process)]] = futurePool {
     setUpEnvironment() flatMap (folder => createInput(folder, input)) map { folder =>
       logger.info("Start process creation")
       folder -> new ProcessBuilder(args)
@@ -86,7 +90,7 @@ object TomitaChecker extends Checker {
     }
   }
 
-  protected def setUpEnvironment(): Try[Path] = Try {
+  def setUpEnvironment(): Try[Path] = Try {
     logger.debug("Start to set up environment")
     val folder = java.nio.file.Files.createTempDirectory(FilePaths.tomitaPath.asPath, "tmp")
     logger.debug(s"Create temporary folder with path $folder")
@@ -100,11 +104,42 @@ object TomitaChecker extends Checker {
     folder
   }
 
-  protected def createInput(path: Path, input: String): Try[Path] = Try {
+  def createInput(path: Path, input: String): Try[Path] = Try {
     val writer = new FileWriter(path.resolve("input.txt").toFile)
     writer.write(input)
     writer.flush()
     logger.debug("Input created")
     path
+  }
+
+  def getOutput(input: String): Future[NodeSeq] = {
+    runTomita(input) flatMap {
+      case Success((folder, process)) if process.waitFor() == 0 =>
+        getTomitaOutput(folder)
+      case Success((_, process)) =>
+        logger.error(s"Process finished with ${process.exitValue()}")
+        Future.exception(new TomitaException("Tomita failure"))
+      case Failure(e) =>
+        logger.error(s"Following error has occured: $e with message ${e.getMessage}")
+        Future.exception(e)
+    }
+  }
+
+  def getTomitaOutput(folder: Path): Future[NodeSeq] = futurePool {
+    XML.loadFile(folder.resolve("output.xml").toFile)
+  }
+
+  def check(standardAnswers: Seq[QuestionAnswer], answer: NodeSeq): Future[Int] = futurePool {
+    val maxScore = standardAnswers.map { s =>
+      val xml = s.xml.getOrElse("")
+      compareAnswers(XML.loadString(xml), answer)
+    }.max
+    maxScore
+  }
+
+  def compareAnswers(standardAnswer: NodeSeq, answer: NodeSeq): Int = {
+    val standardDocument = parseDocument(standardAnswer)
+    val document = parseDocument(answer)
+    standardDocument.compare(document)
   }
 }

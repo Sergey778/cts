@@ -1,8 +1,19 @@
 package db
 
+import checker.TomitaChecker
+import com.twitter.util.Future
 import scalikejdbc._
 
-case class QuestionAnswer(id: BigInt, question: Question, answer: String, creator: User, xml: Option[String] = None)
+case class QuestionAnswer(id: BigInt, question: Question, answer: String, creator: User, xml: Option[String] = None) {
+  def updateXml(): Future[QuestionAnswer] = TomitaChecker.getOutput(answer).map { xml =>
+    val result = DB localTx { implicit session =>
+      sql"UPDATE question_answer SET question_answer_tomita_xml = ${xml.toString} WHERE question_answer_id = $id"
+        .update()
+        .apply()
+    }
+    if (result > 0) QuestionAnswer(id, question, answer, creator, Some(xml.toString())) else this
+  }
+}
 
 object QuestionAnswer {
 

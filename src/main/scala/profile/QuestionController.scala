@@ -89,7 +89,9 @@ class QuestionController extends Controller {
     request.params.get("id") flatMap { id =>
       Question.withId(BigInt(id))
     } map { question =>
-      QuestionAnswer.create(question, request.user, request.params.getOrElse("answer", ""))
+      val answer = QuestionAnswer.create(question, request.user, request.params.getOrElse("answer", ""))
+      answer.map(_.updateXml())
+      answer
     } map { answer =>
       response.temporaryRedirect.location(Paths.profileQuestions.element(request.params("id")))
     } getOrElse response.badRequest
