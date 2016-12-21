@@ -1,10 +1,11 @@
 package db
 
+import db.core.{IdHolder, Table, TableObject}
 import scalikejdbc._
 
 import scala.annotation.tailrec
 
-case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option[UserGroup]) {
+case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option[UserGroup]) extends Table {
 
   def users = using(DB(ConnectionPool.borrow())) { db =>
     db readOnly { implicit session =>
@@ -89,35 +90,45 @@ case class UserGroup(id: BigInt, name: String, leader: User, parentGroup: Option
   }
 }
 
-object UserGroup {
+object UserGroup extends TableObject[UserGroup] with IdHolder {
 
-  protected def generateId = using(DB(ConnectionPool.borrow())) { db =>
-    db localTx { implicit session =>
-      sql"SELECT nextval('user_group_seq')"
-        .map(rs => BigInt(rs.bigInt(1)))
-        .single()
-        .apply()
-    }
-  }
+  override def name: String = "user_group"
 
-  def fromResultSet(rs: WrappedResultSet): UserGroup = UserGroup(
-    id = rs.bigInt("user_group_id"),
-    name = rs.string("user_group_name"),
-    leader = User.withId(rs.bigInt("user_group_leader")).get,
-    parentGroup = rs.bigIntOpt("user_group_parent_id").flatMap(x => findById(BigInt(x)))
+  private final val $id = "id"
+  private final val $name = "name"
+  private final val $leader = "leader"
+  private final val $parentGroup = "parentGroup"
+
+  override def columns: Map[String, String] = Map (
+    $id -> "user_group_id",
+    $name -> "user_group_name",
+    $leader -> "user_group_leader",
+    $parentGroup -> "user_group_parent_id"
   )
 
-  def create(name: String, leader: User, parentGroup: Option[UserGroup]) = generateId flatMap { id =>
-    val result = using(DB(ConnectionPool.borrow())) { db =>
-      db localTx { implicit session =>
-        sql"""
-             INSERT INTO
-              user_group (user_group_id, user_group_leader, user_group_name, user_group_parent_id)
-             VALUES ($id, ${leader.id}, $name, ${parentGroup.map(x => x.id)})
-          """
-          .update()
-          .apply()
-      }
+  def fromResultSet(rs: WrappedResultSet,
+                    id: Option[BigInt] = None,
+                    name: Option[String] = None,
+                    leader: Option[User] = None,
+                    parentGroup: Option[Option[UserGroup]] = None) = UserGroup(
+    id = id.getOrElse(rs.bigInt(columns($id))),
+    name = name.getOrElse(rs.string(columns($name))),
+    leader = leader.orElse(User.withId(rs.bigInt(columns($leader)))).get,
+    parentGroup = parentGroup
+      .orElse(rs.bigIntOpt(columns($parentGroup)).map(x => withId(BigInt(x))))
+      .getOrElse(None)
+  )
+
+  override def fromResultSet(rs: WrappedResultSet): UserGroup = fromResultSet(rs, None, None, None, None)
+
+  def create(name: String, leader: User, parentGroup: Option[UserGroup]): Option[UserGroup] = nextId flatMap { id =>
+    val result = DB localTx { implicit session =>
+      insertSql(
+        $id -> BigInt(id),
+        $name -> name,
+        $leader -> leader.id,
+        $parentGroup -> parentGroup.map(x => x.id)
+      ).update().apply()
     }
     if (result > 0) {
       val group = UserGroup(id, name, leader, parentGroup)
@@ -131,26 +142,5 @@ object UserGroup {
 
   }
 
-  def all = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"SELECT user_group_id, user_group_leader, user_group_name, user_group_parent_id FROM user_group"
-        .map(rs => fromResultSet(rs))
-        .list()
-        .apply()
-    }
-  }
-
-  def findById(id: BigInt) = using(DB(ConnectionPool.borrow())) { db =>
-    db readOnly { implicit session =>
-      sql"""
-           SELECT
-            user_group_id, user_group_leader, user_group_name, user_group_parent_id
-           FROM user_group
-           WHERE user_group_id = $id
-         """
-        .map(rs => fromResultSet(rs))
-        .single()
-        .apply()
-    }
-  }
+  def withId(id: BigInt): Option[UserGroup] = whereOption($id -> id)
 }

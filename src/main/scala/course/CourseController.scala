@@ -132,7 +132,7 @@ class CourseController extends Controller {
 
   filter[UserFilter].post(Paths.coursesAddUserGroup.wildcard("id")) { request: Request =>
     val course = request.params.get("id").flatMap(x => Course.withId(BigInt(x)))
-    val group = request.params.get("selectedGroup").flatMap(x => UserGroup.findById(BigInt(x)))
+    val group = request.params.get("selectedGroup").flatMap(x => UserGroup.withId(BigInt(x)))
     val result = (course, group) match {
       case (Some(c), Some(g)) => c.addUserGroup(g)
       case _ => None

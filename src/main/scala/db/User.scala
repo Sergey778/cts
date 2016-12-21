@@ -47,7 +47,7 @@ case class User(id: BigInt,
     val result = db readOnly { implicit session =>
       sql"""
            SELECT COUNT(*) FROM user_groups
-           WHERE user_id = $id AND user_group_id = ${g.id} AND full_member = 'T'
+           WHERE user_id = $id AND user_group_id = ${g.id} AND full_member = 1
          """
         .map(rs => rs.bigInt(1))
         .single()

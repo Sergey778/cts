@@ -84,7 +84,7 @@ class UserGroupController extends Controller {
 
   filter[UserFilter].post(Paths.userGroupsCreate) { request: Request =>
     val groupName = request.params.get("groupName")
-    val parentGroup = request.params.get("parentGroup").flatMap(x => UserGroup.findById(BigInt(x)))
+    val parentGroup = request.params.get("parentGroup").flatMap(x => UserGroup.withId(BigInt(x)))
     groupName flatMap { name =>
       UserGroup.create(name, request.user, parentGroup)
     } map { group =>
@@ -94,7 +94,7 @@ class UserGroupController extends Controller {
 
   filter[UserFilter].get(Paths.userGroupsAcceptInvite.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { groupId =>
-      UserGroup.findById(BigInt(groupId))
+      UserGroup.withId(BigInt(groupId))
     } flatMap { group =>
       val user =
         if (request.user == group.leader)
@@ -107,7 +107,7 @@ class UserGroupController extends Controller {
 
   filter[UserFilter].get(Paths.userGroups.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { groupId =>
-      UserGroup.findById(BigInt(groupId))
+      UserGroup.withId(BigInt(groupId))
     } map { group =>
       val src = html (
         scalatags.Text.tags.head (
@@ -131,7 +131,7 @@ class UserGroupController extends Controller {
 
   filter[UserFilter].get(Paths.userGroupsInviteSend.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { groupId =>
-      UserGroup.findById(BigInt(groupId))
+      UserGroup.withId(BigInt(groupId))
     } flatMap { group =>
       group.addMember(request.user)
     } map { group =>
@@ -157,7 +157,7 @@ class UserGroupController extends Controller {
 
   filter[UserFilter].post(Paths.userGroupsInviteUser.wildcard("id")) { request: Request =>
     request.params.get("id") flatMap { groupId =>
-      UserGroup.findById(BigInt(groupId))
+      UserGroup.withId(BigInt(groupId))
     } filter { group =>
       group.leader == request.user
     } flatMap { group =>
