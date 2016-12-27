@@ -3,7 +3,7 @@ package checker
 import java.util.concurrent.{ExecutorService, Executors}
 
 import com.twitter.util.{ExecutorServiceFuturePool, Future}
-import db.{Question, TestTry}
+import db.{TestTry, TestTryAnswer}
 
 
 trait Checker {
@@ -12,5 +12,5 @@ trait Checker {
 
   protected val futurePool: ExecutorServiceFuturePool = new ExecutorServiceFuturePool(executorService)
 
-  def check(testTry: TestTry): Future[Map[Question, Boolean]]
+  def check(testTry: TestTry): Future[Seq[TestTryAnswer]]
 }

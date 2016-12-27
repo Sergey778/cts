@@ -1,15 +1,16 @@
 package checker
 import com.twitter.util.Future
-import db.{Question, QuestionAnswer, TestTry}
+import db._
 
 object SimpleChecker extends Checker {
-  override def check(testTry: TestTry): Future[Map[Question, Boolean]] = futurePool {
+  override def check(testTry: TestTry): Future[Seq[TestTryAnswer]] = futurePool {
     testTry.answers.map {
-      case (question, Some(answer)) =>
-        question -> QuestionAnswer
+      case e @ TestTryAnswer(_, question, Some(answer), _, _)
+        if QuestionAnswer
           .fromQuestion(question)
-          .exists(qa => qa.answer.toLowerCase == answer.toLowerCase)
-      case (question, _) => question -> false
+          .exists(p => p.answer.toLowerCase == answer.toLowerCase) =>
+        e.updateSystemGrade(Some(100))
+      case e: TestTryAnswer => e.updateSystemGrade(Some(0))
     }
   }
 }

@@ -6,20 +6,20 @@ import com.twitter.finagle.http.{Request, Response, Status}
 import com.twitter.finagle.{Service, SimpleFilter}
 import com.twitter.finatra.http.Controller
 import com.twitter.util.Future
-import db.{Question, TestTry}
+import db.{Question, TestTry, TestTryAnswer}
 
 import scalatags.Text.all._
 
 object TestTryContext {
   private val testTryField = Request.Schema.newField[TestTry]
-  private val userAnswersField = Request.Schema.newField[Map[Question, Option[String]]]
+  private val userAnswersField = Request.Schema.newField[List[TestTryAnswer]]
 
   implicit class RequestAdditions(val request: Request) extends AnyVal {
     def testTry: TestTry = request.ctx(testTryField)
-    def userAnswers: Map[Question, Option[String]] = request.ctx(userAnswersField)
+    def userAnswers: List[TestTryAnswer] = request.ctx(userAnswersField)
   }
 
-  def assign(request: Request, testTry: TestTry, answers: Map[Question, Option[String]]): Request = {
+  def assign(request: Request, testTry: TestTry, answers: List[TestTryAnswer]): Request = {
     request.ctx.update(testTryField, testTry).update(userAnswersField, answers)
     request
   }
@@ -36,8 +36,8 @@ class TestTryFilter extends SimpleFilter[Request, Response] {
       id <- request.params.get("id")
       testTry: TestTry <- TestTry.fromId(id)
     } yield {
-      val answers = testTry.answers.map { case (q, _) =>
-        q -> request.params.get(s"question-${q.id.toString}")
+      val answers = testTry.answers.map { case e @ TestTryAnswer(_, q, _, _, _) =>
+        e.updateAnswer(request.params.get(s"question-${q.id.toString}"))
       }
       TestTryContext.assign(request, testTry, answers)
     }
@@ -50,20 +50,14 @@ class TestTryController extends Controller {
 
   filter[UserFilter].filter[TestTryFilter].post("/testtry&id=:id") { request: Request =>
     request.userAnswers.foreach {
-      case (question, Some(answer)) => request.testTry.updateAnswer(question, answer)
-      case _ => ()
+      case e @ TestTryAnswer(_, question, answer, _, _) => e.updateAnswer(answer)
     }
     TomitaChecker
       .check(request.testTry)
-      .map(answers => request.testTry.setAnswersChecked(answers))
-      .onSuccess {
-        answers => attemptsChecks = attemptsChecks + (request.testTry -> answers.getOrElse(Map()))
-      }
     response.ok.html("Your answers are gonna be checked in 10 minutes. Take cup of coffee and come back for results")
   }
 
   filter[UserFilter].filter[TestTryFilter].get("/testtry&id=:id") { request: Request =>
-    attemptsChecks.get(request.testTry) map { attempt =>
       val src = html(
         scalatags.Text.all.head(
           tag("title")("Test attempt")
@@ -71,14 +65,14 @@ class TestTryController extends Controller {
         body(
           h1("Results:"),
           div (
-            request.testTry.answers.map { case (question, answer) =>
+            request.testTry.answers.map { case TestTryAnswer(_, question, answer, grade, _) =>
               div(
                 p(question.text),
                 div(
                   p(s"Your answer: ${answer.getOrElse("-")}")
                 ),
                 div(
-                  p(s"Correct: ${attempt.getOrElse(question, "False")}")
+                  p(s"Correct: ${grade.getOrElse(0)}")
                 )
               )
             }.toList
@@ -86,6 +80,5 @@ class TestTryController extends Controller {
         )
       ).render
       response.ok.html(src)
-    } getOrElse response.ok.html("no results yet...")
   }
 }

@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path, StandardCopyOption}
 import java.time.LocalDateTime
 
 import com.twitter.util.Future
-import db.{Question, QuestionAnswer, TestTry}
+import db._
 import grizzled.slf4j.Logger
 import util.FilePaths
 import util.FilePaths.PathExtension
@@ -18,15 +18,15 @@ object TomitaChecker extends Checker {
 
   protected val logger: Logger = Logger("TomitaChecker")
 
-  override def check(testTry: TestTry): Future[Map[Question, Boolean]] = {
+  override def check(testTry: TestTry): Future[Seq[TestTryAnswer]] = {
     val answers = testTry.answers map {
-      case (question, Some(answer)) =>
+      case e @ TestTryAnswer(_, question, Some(answer), _, _) =>
         runTomita(answer) flatMap {
           case Success((folder, process)) if process.waitFor() == 0 =>
             getTomitaOutput(folder).flatMap { xmlAnswer =>
               val checkResult = check(QuestionAnswer.fromQuestion(question), xmlAnswer)
               checkResult.foreach(x => logger.info(s"result => $x"))
-              checkResult.map(_ > 50)
+              checkResult.map(x => e.updateSystemGrade(Some(x)))
             }
           case Success((_, process)) =>
             logger.error(s"Process finished with ${process.exitValue()}")
@@ -34,14 +34,11 @@ object TomitaChecker extends Checker {
           case Failure(e) =>
             logger.error(s"Following error has occured: $e with message ${e.getMessage}")
             Future.exception(e)
-        } map { b: Boolean =>
-          question -> b
         }
-      case (question, _) => Future.value(question -> false)
+      case e @ TestTryAnswer(_, question, _, _, _) => Future.value(e.updateSystemGrade(Some(0)))
     }
     Future
-      .collect(answers.toSeq)
-      .map(seq => seq.toMap)
+      .collect(answers)
   }
 
   protected def readTomitaOutput(folder: Path): Future[Boolean] = futurePool {

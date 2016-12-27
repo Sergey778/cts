@@ -8,40 +8,8 @@ import scalikejdbc._
 
 
 case class TestTry(id: String, test: Test, user: User, startedTime: LocalDateTime) {
-  def answers: Map[Question, Option[String]] = DB readOnly { implicit session =>
-    sql"""
-         SELECT answer, question_id
-         FROM test_try_answers
-         WHERE test_try_id = $id
-       """
-      .map(rs => Question.withId(rs.bigInt("question_id")) -> rs.stringOpt("answer"))
-      .list()
-      .apply()
-  } filter {
-    case ((Some(_), _)) => true
-    case _ => false
-  } map { case (q, a) =>
-    q.get -> a
-  } toMap
 
-  def updateAnswer(q: Question, answer: String): Option[TestTry] = DB localTx { implicit session =>
-    val result = sql"UPDATE test_try_answers SET answer = $answer WHERE test_try_id = $id AND question_id = ${q.id}"
-      .update()
-      .apply()
-
-    if (result > 0) Some(this) else None
-  }
-
-
-  def setAnswersChecked(answers: Map[Question, Boolean]): Option[Map[Question, Boolean]] =
-    DB localTx { implicit session =>
-    val result = answers map { case (question, isCorrect) =>
-      sql"UPDATE test_try_answers SET is_correct = ${if (isCorrect) 1 else 0} WHERE test_try_id = $id AND question_id = ${question.id}"
-          .update()
-          .apply()
-    }
-    if (result.sum == answers.size) Some(answers) else None
-  }
+  def answers: List[TestTryAnswer] = TestTryAnswer.fromTestTry(this)
 
   def createAnswers(questions: List[Question]): Option[TestTry] = DB localTx { implicit session =>
     val result = questions map { q =>
