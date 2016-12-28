@@ -36,8 +36,8 @@ class TestTryFilter extends SimpleFilter[Request, Response] {
       id <- request.params.get("id")
       testTry: TestTry <- TestTry.fromId(id)
     } yield {
-      val answers = testTry.answers.map { case e @ TestTryAnswer(_, q, _, _, _) =>
-        e.updateAnswer(request.params.get(s"question-${q.id.toString}"))
+      val answers = testTry.answers.map { case TestTryAnswer(idd, q, _, sg, tg) =>
+        TestTryAnswer(idd, q, request.params.get(s"question-${q.id.toString}"), sg, tg)
       }
       TestTryContext.assign(request, testTry, answers)
     }
