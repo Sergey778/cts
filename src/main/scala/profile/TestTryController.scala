@@ -6,7 +6,7 @@ import com.twitter.finagle.http.{Request, Response, Status}
 import com.twitter.finagle.{Service, SimpleFilter}
 import com.twitter.finatra.http.Controller
 import com.twitter.util.Future
-import db.{Question, TestTry, TestTryAnswer}
+import db._
 
 import scalatags.Text.all._
 
@@ -70,6 +70,9 @@ class TestTryController extends Controller {
                 p(question.text),
                 div(
                   p(s"Your answer: ${answer.getOrElse("-")}")
+                ),
+                div(
+                  p(s"Teacher answer: ${QuestionAnswer.fromQuestion(question).headOption.map(_.answer).getOrElse("-")}")
                 ),
                 div(
                   p(s"Correct: ${grade.getOrElse(0)}")
