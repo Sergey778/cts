@@ -14,12 +14,13 @@ javaOptions ++= Seq(
 )
 
 lazy val versions = new {
-  val finatra = "2.5.0"
+  val finatra = "2.7.0"
   val logback = "1.1.7"
-  val scalatest = "2.2.6"
+  val scalatest = "3.0.0"
   val oraclejdbc = "12.1.0.1-atlassian-hosted"
   val postgresqljdbc = "9.4.1211"
   val bcrypt = "2.6"
+  val scalaXml = "1.0.6"
 }
 
 resolvers ++= Seq(
@@ -62,7 +63,8 @@ libraryDependencies ++= Seq(
   "com.google.inject.extensions" % "guice-testlib" % "4.0" % "test",
 
   "org.mockito" % "mockito-core" % "1.9.5" % "test",
-  "org.specs2" %% "specs2" % "2.3.12" % "test"
+  "org.specs2" %% "specs2" % "2.3.12" % "test",
+  "org.scala-lang.modules" % "scala-xml_2.11" % versions.scalaXml
 )
 
 mainClass in assembly := Some("runner.ServerRunner")
