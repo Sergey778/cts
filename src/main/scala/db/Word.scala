@@ -47,5 +47,5 @@ object Word extends TableObject[Word] with IdHolder {
   def withValue(value: String): Option[Word] = whereOption($value -> value)
   def withId(id: BigInt): Option[Word] = whereOption($id -> id)
 
-  def apply(value: String): Word = withValue(value).getOrElse(Word(-1, value))
+  def apply(value: String): Word = withValue(value.toLowerCase()).getOrElse(Word(-1, value))
 }

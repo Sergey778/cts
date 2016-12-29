@@ -7,7 +7,11 @@ import scalikejdbc._
 case class QuestionAnswer(id: BigInt, question: Question, answer: String, creator: User, xml: Option[String] = None) {
   def updateXml(): Future[QuestionAnswer] = TomitaChecker.getOutput(answer).map { xml =>
     val result = DB localTx { implicit session =>
-      sql"UPDATE question_answer SET question_answer_tomita_xml = ${xml.toString} WHERE question_answer_id = $id"
+      sql"""
+           UPDATE question_answer
+           SET question_answer_tomita_xml = ${xml.toString}
+           WHERE question_answer_id = $id AND question_id = ${question.id}
+        """
         .update()
         .apply()
     }
