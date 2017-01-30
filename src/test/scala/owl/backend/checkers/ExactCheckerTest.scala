@@ -4,17 +4,22 @@ import org.scalatest.{FlatSpec, Matchers}
 import owl.backend._
 
 class ExactCheckerTest extends FlatSpec with Matchers {
+
+  trait SimpleExtractor extends WordExtractor[String] {
+    override def extract(expression: String): Seq[Word] = Seq[Word]()
+  }
+
   "'check' method" must "check if two answers exactly match" in {
     val q = new Question {
       override def value: String = "test?"
     }
-    val a = new TextAnswer {
+    val a = new TextAnswer with SimpleExtractor {
       override def value: String = "yes"
 
       override def question: Question = q
     }
 
-    val b = new TextAnswer {
+    val b = new TextAnswer with SimpleExtractor {
       override def value: String = "yes"
 
       override def question: Question = q
@@ -22,7 +27,7 @@ class ExactCheckerTest extends FlatSpec with Matchers {
 
     val c = a
 
-    val d = new TextAnswer {
+    val d = new TextAnswer with SimpleExtractor {
       override def value: String = "no"
 
       override def question: Question = q
